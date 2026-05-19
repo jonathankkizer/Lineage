@@ -467,9 +467,9 @@ final class CALayerGraphRenderer: GraphRenderer {
         }
 
         let halfH = layout.nodeHeight / 2
-        if let anchor = highlightAnchor, let ap = layout.positions[anchor] {
+        if let anchor = highlightAnchor, let ap = layout.positions[anchor], isInFocus(anchor) {
             let upPath = CGMutablePath()
-            for parent in graph.parents(of: anchor) {
+            for parent in graph.parents(of: anchor) where isInFocus(parent) {
                 guard let p = layout.positions[parent] else { continue }
                 upPath.move(to: CGPoint(x: p.x, y: p.y + halfH))
                 upPath.addLine(to: CGPoint(x: ap.x, y: ap.y - halfH))
@@ -477,7 +477,7 @@ final class CALayerGraphRenderer: GraphRenderer {
             edgeUpstreamLayer.path = upPath
 
             let downPath = CGMutablePath()
-            for child in graph.children(of: anchor) {
+            for child in graph.children(of: anchor) where isInFocus(child) {
                 guard let c = layout.positions[child] else { continue }
                 downPath.move(to: CGPoint(x: ap.x, y: ap.y + halfH))
                 downPath.addLine(to: CGPoint(x: c.x, y: c.y - halfH))
