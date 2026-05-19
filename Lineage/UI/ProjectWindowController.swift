@@ -230,7 +230,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             let item = NSSearchToolbarItem(itemIdentifier: itemIdentifier)
             item.label = "Filter"
             item.paletteLabel = "Filter"
-            item.toolTip = "Filter nodes by name (⌘F)"
+            item.toolTip = "Filter nodes by name. Use +name / name+ / +name+ / N+name / name+N for lineage selection. (⌘F)"
             item.searchField.placeholderString = "Filter"
             item.searchField.delegate = self
             item.preferredWidthForSearchField = 240
@@ -457,12 +457,8 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             v.focusNodeCount = sub.nodes.count
         }
 
-        if !searchQuery.isEmpty {
-            let q = searchQuery.lowercased()
-            var matches: Set<NodeID> = []
-            for (id, node) in graph.nodes where node.name.lowercased().contains(q) {
-                matches.insert(id)
-            }
+        if !searchQuery.isEmpty, let selector = NodeSelector.parse(searchQuery) {
+            let matches = selector.apply(to: graph)
             v.searchMatchCount = matches.count
             if let c = combined {
                 combined = c.intersection(matches)
