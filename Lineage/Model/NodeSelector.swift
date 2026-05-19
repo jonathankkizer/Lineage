@@ -1,5 +1,24 @@
 import Foundation
 
+nonisolated struct SelectionScope: Sendable, Equatable {
+    let nodes: Set<NodeID>
+    // For lineage selectors: upstream and downstream sets, each including the anchor.
+    // An edge belongs to the scope iff both endpoints lie in the same one of these
+    // sets. Either set may be nil, indicating "no lineage scope in that direction"
+    // (substring matches set both to nil and rely on `nodes` membership only).
+    let upstream: Set<NodeID>?
+    let downstream: Set<NodeID>?
+
+    var isEmpty: Bool { nodes.isEmpty }
+    var isLineage: Bool { upstream != nil || downstream != nil }
+
+    static let empty = SelectionScope(nodes: [], upstream: nil, downstream: nil)
+
+    static func nodesOnly(_ nodes: Set<NodeID>) -> SelectionScope {
+        SelectionScope(nodes: nodes, upstream: nil, downstream: nil)
+    }
+}
+
 nonisolated enum NodeSelector: Sendable, Equatable {
     case substring(String)
     case lineage(name: String, upstreamHops: Int, downstreamHops: Int)
@@ -42,7 +61,7 @@ nonisolated enum NodeSelector: Sendable, Equatable {
         return .substring(trimmed)
     }
 
-    func apply(to graph: Graph) -> Set<NodeID> {
+    func apply(to graph: Graph) -> SelectionScope {
         switch self {
         case .substring(let query):
             let needle = query.lowercased()
@@ -50,21 +69,33 @@ nonisolated enum NodeSelector: Sendable, Equatable {
             for (id, node) in graph.nodes where node.name.lowercased().contains(needle) {
                 result.insert(id)
             }
-            return result
+            return .nodesOnly(result)
 
         case .lineage(let name, let up, let down):
             let anchors = Self.findAnchors(name: name, in: graph)
-            var result: Set<NodeID> = []
+            var upstreamSet: Set<NodeID> = []
+            var downstreamSet: Set<NodeID> = []
             for anchor in anchors {
-                let sub = SubgraphSelector.subgraph(
-                    graph: graph,
-                    anchor: anchor,
-                    upstreamHops: up,
-                    downstreamHops: down
-                )
-                result.formUnion(sub.nodes)
+                upstreamSet.insert(anchor)
+                downstreamSet.insert(anchor)
+                if up > 0 {
+                    let upSub = SubgraphSelector.subgraph(
+                        graph: graph, anchor: anchor, upstreamHops: up, downstreamHops: 0
+                    )
+                    upstreamSet.formUnion(upSub.nodes)
+                }
+                if down > 0 {
+                    let downSub = SubgraphSelector.subgraph(
+                        graph: graph, anchor: anchor, upstreamHops: 0, downstreamHops: down
+                    )
+                    downstreamSet.formUnion(downSub.nodes)
+                }
             }
-            return result
+            return SelectionScope(
+                nodes: upstreamSet.union(downstreamSet),
+                upstream: up > 0 ? upstreamSet : nil,
+                downstream: down > 0 ? downstreamSet : nil
+            )
         }
     }
 
