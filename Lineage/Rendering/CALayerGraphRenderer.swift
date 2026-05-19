@@ -167,7 +167,7 @@ final class CALayerGraphRenderer: GraphRenderer {
             if showLabels {
                 if layer.contents == nil, let node = graph?.nodes[id], let layout {
                     let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
-                    layer.contents = labelCache.image(text: node.id.displayName, kind: node.kind, size: size, backingScale: backingScale)
+                    layer.contents = labelCache.image(text: node.name, kind: node.kind, size: size, backingScale: backingScale)
                 }
             } else {
                 layer.contents = nil
@@ -351,6 +351,10 @@ final class CALayerGraphRenderer: GraphRenderer {
         index?.query(point: point)
     }
 
+    func displayName(for id: NodeID) -> String? {
+        graph?.nodes[id]?.name
+    }
+
     func nodeIDs(inContentRect rect: CGRect) -> [NodeID] {
         index?.query(rect: rect) ?? []
     }
@@ -370,7 +374,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         layer.contentsGravity = .center
         layer.opacity = isInFocus(node.id) ? Self.focusedOpacity : Self.unfocusedOpacity
         layer.actions = ["contents": NSNull(), "borderColor": NSNull(), "borderWidth": NSNull(), "backgroundColor": NSNull()]
-        layer.contents = labelCache.image(text: node.id.displayName, kind: node.kind, size: size, backingScale: backingScale)
+        layer.contents = labelCache.image(text: node.name, kind: node.kind, size: size, backingScale: backingScale)
         return layer
     }
 
@@ -379,7 +383,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         for (id, layer) in nodeLayers {
             guard let node = graph.nodes[id] else { continue }
             let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
-            layer.contents = labelCache.image(text: node.id.displayName, kind: node.kind, size: size, backingScale: backingScale)
+            layer.contents = labelCache.image(text: node.name, kind: node.kind, size: size, backingScale: backingScale)
         }
     }
 
