@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Edges layer: upstream (blue) + downstream (orange) -->
+  <g fill="none" stroke-linecap="round">
+    <g stroke="#3B7DD4" stroke-width="11">
+      <line x1="222" y1="240" x2="512" y2="467"/>
+      <line x1="512" y1="240" x2="512" y2="467"/>
+      <line x1="802" y1="240" x2="512" y2="467"/>
+    </g>
+    <g stroke="#F08534" stroke-width="11">
+      <line x1="512" y1="557" x2="222" y2="784"/>
+      <line x1="512" y1="557" x2="512" y2="784"/>
+      <line x1="512" y1="557" x2="802" y2="784"/>
+    </g>
+  </g>
+</svg>
