@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		ABFCACAC2FBC01E500054312 /* dbtdagviewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = dbtdagviewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABFCACAC2FBC01E500054312 /* Lineage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lineage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		ABFCACAE2FBC01E500054312 /* dbtdagviewer */ = {
+		ABFCACAE2FBC01E500054312 /* Lineage */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = dbtdagviewer;
+			path = Lineage;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		ABFCACA32FBC01E500054312 = {
 			isa = PBXGroup;
 			children = (
-				ABFCACAE2FBC01E500054312 /* dbtdagviewer */,
+				ABFCACAE2FBC01E500054312 /* Lineage */,
 				ABFCACAD2FBC01E500054312 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		ABFCACAD2FBC01E500054312 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				ABFCACAC2FBC01E500054312 /* dbtdagviewer.app */,
+				ABFCACAC2FBC01E500054312 /* Lineage.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		ABFCACAB2FBC01E500054312 /* dbtdagviewer */ = {
+		ABFCACAB2FBC01E500054312 /* Lineage */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = ABFCACB72FBC01E600054312 /* Build configuration list for PBXNativeTarget "dbtdagviewer" */;
+			buildConfigurationList = ABFCACB72FBC01E600054312 /* Build configuration list for PBXNativeTarget "Lineage" */;
 			buildPhases = (
 				ABFCACA82FBC01E500054312 /* Sources */,
 				ABFCACA92FBC01E500054312 /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				ABFCACAE2FBC01E500054312 /* dbtdagviewer */,
+				ABFCACAE2FBC01E500054312 /* Lineage */,
 			);
-			name = dbtdagviewer;
+			name = Lineage;
 			packageProductDependencies = (
 			);
-			productName = dbtdagviewer;
-			productReference = ABFCACAC2FBC01E500054312 /* dbtdagviewer.app */;
+			productName = Lineage;
+			productReference = ABFCACAC2FBC01E500054312 /* Lineage.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = ABFCACA72FBC01E500054312 /* Build configuration list for PBXProject "dbtdagviewer" */;
+			buildConfigurationList = ABFCACA72FBC01E500054312 /* Build configuration list for PBXProject "Lineage" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				ABFCACAB2FBC01E500054312 /* dbtdagviewer */,
+				ABFCACAB2FBC01E500054312 /* Lineage */,
 			);
 		};
 /* End PBXProject section */
@@ -248,7 +248,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = dbtdagviewer/dbtdagviewer.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Lineage/Lineage.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -261,7 +261,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kizersolutions.dbtdagviewer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kizersolutions.lineage;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -278,7 +278,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = dbtdagviewer/dbtdagviewer.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Lineage/Lineage.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -291,7 +291,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kizersolutions.dbtdagviewer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kizersolutions.lineage;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -306,7 +306,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		ABFCACA72FBC01E500054312 /* Build configuration list for PBXProject "dbtdagviewer" */ = {
+		ABFCACA72FBC01E500054312 /* Build configuration list for PBXProject "Lineage" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				ABFCACB52FBC01E600054312 /* Debug */,
@@ -315,7 +315,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		ABFCACB72FBC01E600054312 /* Build configuration list for PBXNativeTarget "dbtdagviewer" */ = {
+		ABFCACB72FBC01E600054312 /* Build configuration list for PBXNativeTarget "Lineage" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				ABFCACB82FBC01E600054312 /* Debug */,

@@ -1,4 +1,4 @@
-# dbtdagviewer
+# Lineage
 
 A native macOS app for exploring a dbt-core project as a graph. AppKit, Swift 6, no Electron, no browser tab.
 
@@ -27,7 +27,7 @@ If a change feels like it requires fighting AppKit, the change is wrong. Find th
 
 ## Architecture
 
-Source tree under `dbtdagviewer/`:
+Source tree under `Lineage/`:
 
 ```
 App/                        @main, AppDelegate, menu bar construction
@@ -40,10 +40,10 @@ UI/                         ProjectWindowController, GraphView, SidebarControlle
                             InspectorView, FilterPopoverController, SelectionModel,
                             Viewport, FocusState
 Info.plist                  ← actually at /Resources/Info.plist (outside synced group)
-dbtdagviewer.entitlements
+Lineage.entitlements
 ```
 
-The `dbtdagviewer/` folder is wired into Xcode as a `PBXFileSystemSynchronizedRootGroup` — new files dropped into the folder are auto-included; no pbxproj edits needed when adding Swift sources. Info.plist lives in `Resources/` at repo root so the synced group doesn't accidentally double-include it as a bundle resource.
+The `Lineage/` folder is wired into Xcode as a `PBXFileSystemSynchronizedRootGroup` — new files dropped into the folder are auto-included; no pbxproj edits needed when adding Swift sources. Info.plist lives in `Resources/` at repo root so the synced group doesn't accidentally double-include it as a bundle resource.
 
 ### Data flow
 
@@ -176,6 +176,6 @@ If anything regresses past these numbers, the cause is usually one of: (a) re-re
 
 ## Running
 
-Open `dbtdagviewer.xcodeproj` in Xcode 16+. Cmd+R. Requires macOS 26+.
+Open `Lineage.xcodeproj` in Xcode 16+. Cmd+R. Requires macOS 26+.
 
 To exercise with real data: Cmd+O → `fixtures/data-warehouse/target/`. That's ~1,600 nodes from a real Suvida dbt run.
