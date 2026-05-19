@@ -27,3 +27,6 @@ Package.resolved
 
 ## Misc
 *.log
+
+## Dev fixtures (not bundled, not tracked)
+fixtures/
