@@ -544,6 +544,10 @@ private final class ChipView: NSView {
         let labelSize = label.intrinsicContentSize
         return NSSize(width: labelSize.width + 10, height: labelSize.height + 2)
     }
+
+    override var firstBaselineOffsetFromTop: CGFloat {
+        1 + label.firstBaselineOffsetFromTop
+    }
 }
 
 @MainActor
@@ -585,6 +589,10 @@ private final class WrappingHStack: NSView {
         let width = bounds.width > 0 ? bounds.width : 200
         let info = computeLayout(maxWidth: width)
         return NSSize(width: NSView.noIntrinsicMetric, height: info.height)
+    }
+
+    override var firstBaselineOffsetFromTop: CGFloat {
+        subviews.first?.firstBaselineOffsetFromTop ?? 0
     }
 
     private func computeLayout(maxWidth: CGFloat) -> (frames: [NSRect], height: CGFloat) {
