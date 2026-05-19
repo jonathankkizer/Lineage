@@ -27,6 +27,8 @@ final class CALayerGraphRenderer: GraphRenderer {
     private var currentHover: NodeID?
     private var focusSet: Set<NodeID>?
     private var lastAffected: Set<NodeID> = []
+    private var coloringMode: NodeColoring = .kind
+    private var buildTimings: BuildTimings = .empty
 
     static let focusedOpacity: Float = 1.0
     static let unfocusedOpacity: Float = 0.07
@@ -216,17 +218,56 @@ final class CALayerGraphRenderer: GraphRenderer {
         marqueeLayer.fillColor = NSColor.controlAccentColor.withAlphaComponent(0.12).cgColor
         marqueeLayer.strokeColor = RendererColors.selection.cgColor
 
-        guard let graph else { return }
-        for (id, layer) in nodeLayers {
-            guard let node = graph.nodes[id] else { continue }
-            layer.backgroundColor = RendererColors.fill(for: node.kind).cgColor
-            layer.borderColor = RendererColors.border(for: node.kind).cgColor
-        }
+        reapplyNodeColors()
 
         labelCache.clear()
         rebuildLabels()
         lastAffected.removeAll(keepingCapacity: true)
         rebuildHighlights()
+    }
+
+    func setColoring(_ mode: NodeColoring) {
+        guard mode != coloringMode else { return }
+        coloringMode = mode
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        reapplyNodeColors()
+        lastAffected.removeAll(keepingCapacity: true)
+        rebuildHighlights()
+    }
+
+    func setBuildTimings(_ timings: BuildTimings) {
+        buildTimings = timings
+        guard coloringMode == .buildTime else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        reapplyNodeColors()
+        lastAffected.removeAll(keepingCapacity: true)
+        rebuildHighlights()
+    }
+
+    private func reapplyNodeColors() {
+        guard let graph else { return }
+        for (id, layer) in nodeLayers {
+            guard let node = graph.nodes[id] else { continue }
+            let fill = resolveFill(id: id, kind: node.kind)
+            layer.backgroundColor = fill.cgColor
+            layer.borderColor = RendererColors.border(for: fill).cgColor
+        }
+    }
+
+    private func resolveFill(id: NodeID, kind: ResourceKind) -> NSColor {
+        switch coloringMode {
+        case .kind:
+            return RendererColors.fill(for: kind)
+        case .buildTime:
+            if let p = buildTimings.colorScore[id] {
+                return RendererColors.buildTimeFill(score: p)
+            }
+            return RendererColors.untimedFill(for: kind)
+        }
     }
 
     private func applyFocus() {
@@ -270,8 +311,9 @@ final class CALayerGraphRenderer: GraphRenderer {
         layer.cornerRadius = 6
         layer.cornerCurve = .continuous
         layer.borderWidth = 1
-        layer.backgroundColor = RendererColors.fill(for: node.kind).cgColor
-        layer.borderColor = RendererColors.border(for: node.kind).cgColor
+        let fill = resolveFill(id: node.id, kind: node.kind)
+        layer.backgroundColor = fill.cgColor
+        layer.borderColor = RendererColors.border(for: fill).cgColor
         layer.contentsScale = backingScale
         layer.contentsGravity = .center
         layer.opacity = isInFocus(node.id) ? Self.focusedOpacity : Self.unfocusedOpacity
@@ -328,7 +370,8 @@ final class CALayerGraphRenderer: GraphRenderer {
         let toReset = lastAffected.subtracting(affected)
         for id in toReset {
             guard let layer = nodeLayers[id], let kind = graph?.nodes[id]?.kind else { continue }
-            layer.borderColor = RendererColors.border(for: kind).cgColor
+            let fill = resolveFill(id: id, kind: kind)
+            layer.borderColor = RendererColors.border(for: fill).cgColor
             layer.borderWidth = 1
         }
 
@@ -347,7 +390,8 @@ final class CALayerGraphRenderer: GraphRenderer {
                 layer.borderColor = RendererColors.edgeDownstream.cgColor
                 layer.borderWidth = 1.5
             } else if let kind = graph?.nodes[id]?.kind {
-                layer.borderColor = RendererColors.border(for: kind).cgColor
+                let fill = resolveFill(id: id, kind: kind)
+                layer.borderColor = RendererColors.border(for: fill).cgColor
                 layer.borderWidth = 1
             }
         }

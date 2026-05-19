@@ -25,9 +25,13 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     private weak var filterToolbarButton: NSButton?
     private var filterPopover: NSPopover?
 
+    private var coloringMode: NodeColoring = .kind
+    private weak var coloringSegmented: NSSegmentedControl?
+
     nonisolated private static let zoomToFitID = NSToolbarItem.Identifier("zoom-to-fit")
     nonisolated private static let searchID = NSToolbarItem.Identifier("search")
     nonisolated private static let filterID = NSToolbarItem.Identifier("filter")
+    nonisolated private static let coloringID = NSToolbarItem.Identifier("coloring")
     nonisolated private static let toggleInspectorID = NSToolbarItem.Identifier("toggle-inspector")
 
     init(document: DbtProjectDocument) {
@@ -180,6 +184,8 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         }
 
         graphView.install(graph: graph, layout: layout)
+        graphView.setBuildTimings(document.buildTimings)
+        graphView.setColoring(coloringMode)
         inspectorView.documentDidLoad(graph: graph)
     }
 
@@ -200,11 +206,11 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     // MARK: - Toolbar
 
     nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, .flexibleSpace, Self.searchID, .flexibleSpace, Self.toggleInspectorID]
+        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.coloringID, .flexibleSpace, Self.searchID, .flexibleSpace, Self.toggleInspectorID]
     }
 
     nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.searchID, Self.toggleInspectorID, .flexibleSpace, .space]
+        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.coloringID, Self.searchID, Self.toggleInspectorID, .flexibleSpace, .space]
     }
 
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
@@ -262,6 +268,25 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             item.action = #selector(toggleInspector(_:))
             return item
 
+        case Self.coloringID:
+            let segmented = NSSegmentedControl(labels: ["Kind", "Build Time"], trackingMode: .selectOne, target: self, action: #selector(coloringSegmentedChanged(_:)))
+            segmented.segmentStyle = .texturedRounded
+            segmented.selectedSegment = coloringMode.rawValue
+            segmented.setToolTip("Color nodes by resource kind", forSegment: 0)
+            segmented.setToolTip("Color nodes by build time (green → red, by percentile of last run)", forSegment: 1)
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                segmented.heightAnchor.constraint(equalToConstant: 26),
+            ])
+            coloringSegmented = segmented
+
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            item.view = segmented
+            item.label = "Color"
+            item.paletteLabel = "Color By"
+            item.toolTip = "Color nodes by kind or by build time"
+            return item
+
         default:
             return nil
         }
@@ -274,6 +299,18 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     @objc func toggleInspector(_ sender: Any?) {
         inspectorVisible.toggle()
         inspectorSplitItem.animator().isCollapsed = !inspectorVisible
+    }
+
+    @objc private func coloringSegmentedChanged(_ sender: NSSegmentedControl) {
+        let mode = NodeColoring(rawValue: sender.selectedSegment) ?? .kind
+        setColoringMode(mode)
+    }
+
+    private func setColoringMode(_ mode: NodeColoring) {
+        guard mode != coloringMode else { return }
+        coloringMode = mode
+        coloringSegmented?.selectedSegment = mode.rawValue
+        graphView.setColoring(mode)
     }
 
     // MARK: - Reload

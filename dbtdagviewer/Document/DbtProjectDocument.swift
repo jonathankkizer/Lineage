@@ -14,6 +14,7 @@ final class DbtProjectDocument: NSDocument {
     @MainActor private(set) var fullGraph: Graph?
     @MainActor private(set) var graph: Graph?
     @MainActor private(set) var graphLayout: GraphLayout?
+    @MainActor private(set) var buildTimings: BuildTimings = .empty
     @MainActor private(set) var loadError: Error?
     @MainActor private(set) var nodeFilter: NodeFilter = .default
 
@@ -70,14 +71,18 @@ final class DbtProjectDocument: NSDocument {
 
         controller.showLoading()
 
+        let runResultsURL = manifestURL.deletingLastPathComponent().appendingPathComponent("run_results.json")
+
         do {
             let manifest = try await Self.parse(url: manifestURL)
             let full = await Self.buildGraph(from: manifest)
             let filtered = await Self.applyFilter(graph: full, filter: nodeFilter)
             let layout = await Self.computeLayout(graph: filtered)
+            let timings = await Self.loadBuildTimings(url: runResultsURL)
             self.fullGraph = full
             self.graph = filtered
             self.graphLayout = layout
+            self.buildTimings = timings
             self.loadError = nil
             controller.documentDidFinishLoading()
         } catch {
@@ -154,6 +159,19 @@ final class DbtProjectDocument: NSDocument {
     private static func computeLayout(graph: Graph) async -> GraphLayout {
         await Task.detached(priority: .userInitiated) {
             LayeredLayout.compute(graph: graph)
+        }.value
+    }
+
+    private static func loadBuildTimings(url: URL) async -> BuildTimings {
+        await Task.detached(priority: .userInitiated) {
+            let needsRelease = url.startAccessingSecurityScopedResource()
+            defer {
+                if needsRelease { url.stopAccessingSecurityScopedResource() }
+            }
+            guard FileManager.default.fileExists(atPath: url.path) else { return .empty }
+            guard let data = try? Data(contentsOf: url, options: [.mappedIfSafe]) else { return .empty }
+            guard let parsed = try? RunResultsParser.parse(data: data) else { return .empty }
+            return BuildTimings.build(from: parsed)
         }.value
     }
 }
