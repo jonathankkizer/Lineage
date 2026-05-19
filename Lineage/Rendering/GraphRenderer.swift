@@ -13,7 +13,7 @@ protocol GraphRenderer: AnyObject {
     func setHover(_ id: NodeID?)
     func setMarquee(_ rect: CGRect?)
 
-    func setFocus(_ ids: Set<NodeID>?, animationDuration: CFTimeInterval)
+    func setFocus(_ scope: SelectionScope?, animationDuration: CFTimeInterval)
     func focusBounds() -> CGRect
 
     func setColoring(_ mode: NodeColoring)
