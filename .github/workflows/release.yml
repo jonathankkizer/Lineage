@@ -39,6 +39,7 @@ jobs:
             -derivedDataPath build \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="${{ secrets.SIGNING_IDENTITY }}" \
+            CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
             OTHER_CODE_SIGN_FLAGS="--timestamp --options=runtime" \
             clean build
 
@@ -60,13 +61,30 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
-          xcrun notarytool submit "dist/Lineage-${GITHUB_REF_NAME}.dmg" \
+          set -e
+          DMG="dist/Lineage-${GITHUB_REF_NAME}.dmg"
+
+          SUBMIT_JSON=$(xcrun notarytool submit "$DMG" \
             --apple-id "$APPLE_ID" \
             --team-id "$APPLE_TEAM_ID" \
             --password "$APPLE_APP_PASSWORD" \
-            --wait
+            --output-format json \
+            --wait)
+          echo "$SUBMIT_JSON"
 
-          xcrun stapler staple "dist/Lineage-${GITHUB_REF_NAME}.dmg"
+          STATUS=$(echo "$SUBMIT_JSON" | jq -r .status)
+          ID=$(echo "$SUBMIT_JSON" | jq -r .id)
+
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "::error::Notarization status: $STATUS. Fetching notary log for $ID..."
+            xcrun notarytool log "$ID" \
+              --apple-id "$APPLE_ID" \
+              --team-id "$APPLE_TEAM_ID" \
+              --password "$APPLE_APP_PASSWORD" || true
+            exit 1
+          fi
+
+          xcrun stapler staple "$DMG"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
