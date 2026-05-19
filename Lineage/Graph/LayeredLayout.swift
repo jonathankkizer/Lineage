@@ -3,29 +3,45 @@ import Foundation
 
 nonisolated struct GraphLayout: Sendable {
     let positions: [NodeID: CGPoint]
+    let widths: [NodeID: CGFloat]
+    let nodeHeight: CGFloat
     let layerCount: Int
     let layerY: [CGFloat]
     let bounds: CGRect
-    let nodeSize: CGSize
 
     static let empty = GraphLayout(
-        positions: [:], layerCount: 0, layerY: [],
-        bounds: .zero, nodeSize: .zero
+        positions: [:], widths: [:], nodeHeight: 0,
+        layerCount: 0, layerY: [], bounds: .zero
     )
+
+    func width(for id: NodeID) -> CGFloat {
+        widths[id] ?? NodeLabelMetrics.minWidth
+    }
+
+    func rect(for id: NodeID) -> CGRect? {
+        guard let p = positions[id] else { return nil }
+        let w = width(for: id)
+        return CGRect(x: p.x - w / 2, y: p.y - nodeHeight / 2, width: w, height: nodeHeight)
+    }
 }
 
 enum LayeredLayout {
 
-    nonisolated static let nodeSize = CGSize(width: 160, height: 36)
-    nonisolated static let horizontalSpacing: CGFloat = 24
+    nonisolated static let horizontalSpacing: CGFloat = 14
     nonisolated static let verticalSpacing: CGFloat = 56
-    nonisolated static let rowSpacing: CGFloat = 12
+    nonisolated static let rowSpacing: CGFloat = 10
     nonisolated static let maxRowWidth: CGFloat = 4500
     nonisolated static let crossingIterations = 4
     nonisolated static let folderCohesionWeight: CGFloat = 0.30
 
     nonisolated static func compute(graph: Graph) -> GraphLayout {
         guard !graph.nodes.isEmpty else { return .empty }
+
+        var widths: [NodeID: CGFloat] = [:]
+        widths.reserveCapacity(graph.nodes.count)
+        for (id, _) in graph.nodes {
+            widths[id] = NodeLabelMetrics.nodeWidth(for: id.displayName)
+        }
 
         let topo = Topology.topologicallySort(graph)
 
@@ -67,16 +83,16 @@ enum LayeredLayout {
         positions.reserveCapacity(graph.nodes.count)
         var layerY: [CGFloat] = Array(repeating: 0, count: maxLayer + 1)
 
-        placeAllLayers(layers: layers, positions: &positions, layerY: &layerY)
+        placeAllLayers(layers: layers, widths: widths, positions: &positions, layerY: &layerY)
 
         for _ in 0..<crossingIterations {
             sweepDown(layers: &layers, graph: graph, positions: positions)
-            placeAllLayers(layers: layers, positions: &positions, layerY: &layerY)
+            placeAllLayers(layers: layers, widths: widths, positions: &positions, layerY: &layerY)
             sweepUp(layers: &layers, graph: graph, positions: positions)
-            placeAllLayers(layers: layers, positions: &positions, layerY: &layerY)
+            placeAllLayers(layers: layers, widths: widths, positions: &positions, layerY: &layerY)
         }
 
-        return finalize(positions: positions, layerY: layerY, layerCount: maxLayer + 1)
+        return finalize(positions: positions, widths: widths, layerY: layerY, layerCount: maxLayer + 1)
     }
 
     nonisolated private struct LayerKey: Hashable, Comparable {
@@ -105,38 +121,60 @@ enum LayeredLayout {
 
     nonisolated private static func placeAllLayers(
         layers: [[NodeID]],
+        widths: [NodeID: CGFloat],
         positions: inout [NodeID: CGPoint],
         layerY: inout [CGFloat]
     ) {
-        let stride = nodeSize.width + horizontalSpacing
-        let rowStride = nodeSize.height + rowSpacing
-        let maxNodesPerRow = max(1, Int(maxRowWidth / stride))
+        let nodeHeight = NodeLabelMetrics.height
+        let rowStride = nodeHeight + rowSpacing
 
         var currentTopY: CGFloat = 0
         for i in 0..<layers.count {
             let ids = layers[i]
-            let nodeCount = ids.count
-            let rowCount = max(1, (nodeCount + maxNodesPerRow - 1) / maxNodesPerRow)
-            layerY[i] = currentTopY + nodeSize.height / 2
+            layerY[i] = currentTopY + nodeHeight / 2
 
-            var idx = 0
-            var remaining = nodeCount
-            for r in 0..<rowCount {
-                let take = min(remaining, maxNodesPerRow)
-                let rowWidth = CGFloat(max(0, take - 1)) * stride
-                let startX = -rowWidth / 2
-                let rowY = currentTopY + CGFloat(r) * rowStride + nodeSize.height / 2
-                for col in 0..<take {
-                    let id = ids[idx]
-                    positions[id] = CGPoint(x: startX + CGFloat(col) * stride, y: rowY)
-                    idx += 1
+            let rows = wrapLayer(ids: ids, widths: widths)
+
+            for (r, row) in rows.enumerated() {
+                let rowTotalWidth = row.indices.reduce(CGFloat(0)) { acc, j in
+                    acc + (widths[row[j]] ?? NodeLabelMetrics.minWidth)
+                } + CGFloat(max(0, row.count - 1)) * horizontalSpacing
+                let startX = -rowTotalWidth / 2
+                let rowY = currentTopY + CGFloat(r) * rowStride + nodeHeight / 2
+
+                var x = startX
+                for id in row {
+                    let w = widths[id] ?? NodeLabelMetrics.minWidth
+                    positions[id] = CGPoint(x: x + w / 2, y: rowY)
+                    x += w + horizontalSpacing
                 }
-                remaining -= take
             }
 
-            let layerHeight = CGFloat(rowCount) * nodeSize.height + CGFloat(max(0, rowCount - 1)) * rowSpacing
+            let rowCount = max(1, rows.count)
+            let layerHeight = CGFloat(rowCount) * nodeHeight + CGFloat(max(0, rowCount - 1)) * rowSpacing
             currentTopY += layerHeight + verticalSpacing
         }
+    }
+
+    nonisolated private static func wrapLayer(
+        ids: [NodeID],
+        widths: [NodeID: CGFloat]
+    ) -> [[NodeID]] {
+        guard !ids.isEmpty else { return [[]] }
+        var rows: [[NodeID]] = [[]]
+        var currentWidth: CGFloat = 0
+        for id in ids {
+            let w = widths[id] ?? NodeLabelMetrics.minWidth
+            let needed = currentWidth == 0 ? w : currentWidth + horizontalSpacing + w
+            if needed > maxRowWidth, let last = rows.last, !last.isEmpty {
+                rows.append([id])
+                currentWidth = w
+            } else {
+                rows[rows.count - 1].append(id)
+                currentWidth = needed
+            }
+        }
+        return rows
     }
 
     // MARK: - Barycenter sweeps
@@ -290,26 +328,30 @@ enum LayeredLayout {
 
     nonisolated private static func finalize(
         positions: [NodeID: CGPoint],
+        widths: [NodeID: CGFloat],
         layerY: [CGFloat],
         layerCount: Int
     ) -> GraphLayout {
+        let nodeHeight = NodeLabelMetrics.height
         var minX = CGFloat.greatestFiniteMagnitude
         var maxX = -CGFloat.greatestFiniteMagnitude
         var minY = CGFloat.greatestFiniteMagnitude
         var maxY = -CGFloat.greatestFiniteMagnitude
-        for p in positions.values {
-            minX = min(minX, p.x - nodeSize.width / 2)
-            maxX = max(maxX, p.x + nodeSize.width / 2)
-            minY = min(minY, p.y - nodeSize.height / 2)
-            maxY = max(maxY, p.y + nodeSize.height / 2)
+        for (id, p) in positions {
+            let w = widths[id] ?? NodeLabelMetrics.minWidth
+            minX = min(minX, p.x - w / 2)
+            maxX = max(maxX, p.x + w / 2)
+            minY = min(minY, p.y - nodeHeight / 2)
+            maxY = max(maxY, p.y + nodeHeight / 2)
         }
         let bounds = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
         return GraphLayout(
             positions: positions,
+            widths: widths,
+            nodeHeight: nodeHeight,
             layerCount: layerCount,
             layerY: layerY,
-            bounds: bounds,
-            nodeSize: nodeSize
+            bounds: bounds
         )
     }
 }

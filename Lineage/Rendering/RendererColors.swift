@@ -7,20 +7,25 @@ enum NodeColoring: Int, Sendable {
 
 enum RendererColors {
 
-    static func fill(for kind: ResourceKind) -> NSColor {
+    static func kindColor(for kind: ResourceKind) -> NSColor {
         switch kind {
-        case .model:         return NSColor.systemBlue.withAlphaComponent(0.85)
-        case .source:        return NSColor.systemGreen.withAlphaComponent(0.85)
-        case .seed:          return NSColor.systemBrown.withAlphaComponent(0.85)
-        case .test:          return NSColor.systemPurple.withAlphaComponent(0.60)
-        case .snapshot:      return NSColor.systemTeal.withAlphaComponent(0.85)
-        case .exposure:      return NSColor.systemOrange.withAlphaComponent(0.85)
-        case .metric:        return NSColor.systemPink.withAlphaComponent(0.85)
-        case .semanticModel: return NSColor.systemIndigo.withAlphaComponent(0.85)
-        case .savedQuery:    return NSColor.systemYellow.withAlphaComponent(0.85)
-        case .unitTest:      return NSColor.systemPurple.withAlphaComponent(0.40)
-        case .unknown:       return NSColor.systemGray.withAlphaComponent(0.70)
+        case .model:         return .systemBlue
+        case .source:        return .systemGreen
+        case .seed:          return .systemBrown
+        case .test:          return .systemPurple
+        case .snapshot:      return .systemTeal
+        case .exposure:      return .systemOrange
+        case .metric:        return .systemPink
+        case .semanticModel: return .systemIndigo
+        case .savedQuery:    return .systemYellow
+        case .unitTest:      return .systemPurple
+        case .unknown:       return .systemGray
         }
+    }
+
+    // Inspector and other surfaces still use the saturated "marker" fill API.
+    static func fill(for kind: ResourceKind) -> NSColor {
+        kindColor(for: kind).withAlphaComponent(0.85)
     }
 
     static func border(for fill: NSColor) -> NSColor {
@@ -31,13 +36,32 @@ enum RendererColors {
         border(for: fill(for: kind))
     }
 
-    static func buildTimeFill(score: Double) -> NSColor {
+    // Node chip styling (used by the graph renderer).
+    private static let chipFillAlpha: CGFloat = 0.14
+    private static let chipBorderAlpha: CGFloat = 0.70
+    private static let untimedFillAlpha: CGFloat = 0.06
+    private static let untimedBorderAlpha: CGFloat = 0.25
+
+    static func nodeChipFill(for kind: ResourceKind) -> NSColor {
+        kindColor(for: kind).withAlphaComponent(chipFillAlpha)
+    }
+
+    static func nodeChipBorder(for kind: ResourceKind) -> NSColor {
+        kindColor(for: kind).withAlphaComponent(chipBorderAlpha)
+    }
+
+    static func nodeChipText(for kind: ResourceKind) -> NSColor {
+        // Slightly darkened version of the kind color for legible text on the light fill.
+        kindColor(for: kind).blended(withFraction: 0.30, of: .black) ?? .labelColor
+    }
+
+    static func buildTimeColor(score: Double) -> NSColor {
         let p = max(0, min(1, score))
         let stops: [(Double, NSColor)] = [
-            (0.00, NSColor.systemGreen.withAlphaComponent(0.85)),
-            (0.50, NSColor.systemYellow.withAlphaComponent(0.90)),
-            (0.80, NSColor.systemOrange.withAlphaComponent(0.90)),
-            (1.00, NSColor.systemRed.withAlphaComponent(0.90)),
+            (0.00, .systemGreen),
+            (0.50, .systemYellow),
+            (0.80, .systemOrange),
+            (1.00, .systemRed),
         ]
         for i in 0..<(stops.count - 1) {
             let (p0, c0) = stops[i]
@@ -51,8 +75,29 @@ enum RendererColors {
         return stops.last!.1
     }
 
+    static func buildTimeChipFill(score: Double) -> NSColor {
+        buildTimeColor(score: score).withAlphaComponent(0.22)
+    }
+
+    static func buildTimeChipBorder(score: Double) -> NSColor {
+        buildTimeColor(score: score).withAlphaComponent(0.85)
+    }
+
+    static func untimedChipFill(for kind: ResourceKind) -> NSColor {
+        kindColor(for: kind).withAlphaComponent(untimedFillAlpha)
+    }
+
+    static func untimedChipBorder(for kind: ResourceKind) -> NSColor {
+        kindColor(for: kind).withAlphaComponent(untimedBorderAlpha)
+    }
+
+    // Kept for compatibility with prior call sites; resolved via the new chip API.
+    static func buildTimeFill(score: Double) -> NSColor {
+        buildTimeChipFill(score: score)
+    }
+
     static func untimedFill(for kind: ResourceKind) -> NSColor {
-        fill(for: kind).withAlphaComponent(0.18)
+        untimedChipFill(for: kind)
     }
 
     static var selection: NSColor { .controlAccentColor }
@@ -76,6 +121,10 @@ enum RendererColors {
 
     static var edgeDownstream: NSColor {
         NSColor.systemOrange.withAlphaComponent(0.85)
+    }
+
+    static func labelText(for kind: ResourceKind) -> NSColor {
+        nodeChipText(for: kind)
     }
 
     static var labelText: NSColor { .labelColor }

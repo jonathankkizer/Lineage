@@ -245,11 +245,23 @@ final class GraphView: NSView, NSMenuItemValidation {
     override func mouseMoved(with event: NSEvent) {
         let viewPoint = convert(event.locationInWindow, from: nil)
         let contentPoint = viewport.contentPoint(fromView: viewPoint)
-        renderer.setHover(renderer.nodeID(atContentPoint: contentPoint))
+        let id = renderer.nodeID(atContentPoint: contentPoint)
+        renderer.setHover(id)
+        updateTooltip(for: id)
     }
 
     override func mouseExited(with event: NSEvent) {
         renderer.setHover(nil)
+        updateTooltip(for: nil)
+    }
+
+    private func updateTooltip(for id: NodeID?) {
+        guard let id, NodeLabelMetrics.isTruncated(id.displayName) else {
+            if toolTip != nil { toolTip = nil }
+            return
+        }
+        let newTip = id.displayName
+        if toolTip != newTip { toolTip = newTip }
     }
 
     // MARK: - Menu actions (responder chain)
