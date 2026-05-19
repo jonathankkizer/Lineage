@@ -1,22 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <!-- Background canvas tint -->
     <linearGradient id="canvas" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#F7F8FA"/>
-      <stop offset="100%" stop-color="#E9ECF1"/>
+      <stop offset="100%" stop-color="#E5E9F0"/>
     </linearGradient>
-
-    <!-- Neutral chip (light, like the screenshot) -->
-    <linearGradient id="g-chip" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#EAF0F8"/>
-      <stop offset="100%" stop-color="#D6DFEA"/>
-    </linearGradient>
-
-    <!-- Selected chip (slightly more saturated so it draws the eye) -->
     <linearGradient id="g-chip-selected" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#E1ECFA"/>
-      <stop offset="100%" stop-color="#C5D6EC"/>
+      <stop offset="0%" stop-color="#E4EEFB"/>
+      <stop offset="100%" stop-color="#A8C0DD"/>
     </linearGradient>
   </defs>
 
@@ -25,70 +16,27 @@
     <rect x="0" y="0" width="1024" height="1024" fill="url(#canvas)"/>
   </g>
 
-  <!-- LAYER: EDGES (drawn before chips so chips sit on top) -->
-  <g id="layer-edges" fill="none" stroke-linecap="round">
-    <!-- Upstream: blue, parents -> selected top-center anchor -->
-    <g stroke="#3B7DD4" stroke-width="11">
-      <line x1="222" y1="240" x2="512" y2="467"/>
-      <line x1="512" y1="240" x2="512" y2="467"/>
-      <line x1="802" y1="240" x2="512" y2="467"/>
+  <!-- LAYER: RAYS (massively thick — these are the icon's identity at small sizes) -->
+  <g id="layer-rays" fill="none" stroke-linecap="round">
+    <!-- Upstream (blue): 3 rays radiating up from top of selected -->
+    <g stroke="#2E70CA" stroke-width="78">
+      <line x1="512" y1="420" x2="160" y2="120"/>
+      <line x1="512" y1="420" x2="512" y2="80"/>
+      <line x1="512" y1="420" x2="864" y2="120"/>
     </g>
-    <!-- Downstream: orange, selected bottom-center anchor -> children -->
-    <g stroke="#F08534" stroke-width="11">
-      <line x1="512" y1="557" x2="222" y2="784"/>
-      <line x1="512" y1="557" x2="512" y2="784"/>
-      <line x1="512" y1="557" x2="802" y2="784"/>
+    <!-- Downstream (orange): 3 rays radiating down from bottom of selected -->
+    <g stroke="#E97C2A" stroke-width="78">
+      <line x1="512" y1="604" x2="160" y2="904"/>
+      <line x1="512" y1="604" x2="512" y2="944"/>
+      <line x1="512" y1="604" x2="864" y2="904"/>
     </g>
   </g>
 
-  <!-- LAYER: CHIPS -->
-  <g id="layer-chips">
-
-    <!-- PARENTS (upstream, top row) -->
-    <g id="parents">
-      <g>
-        <rect x="137" y="185" width="170" height="55" rx="27.5" fill="url(#g-chip)" stroke="#A8B4C5" stroke-width="1"/>
-        <rect x="170" y="206" width="74"  height="8" rx="4" fill="#FFFFFF" opacity="0.95"/>
-        <rect x="180" y="218" width="50"  height="6" rx="3" fill="#FFFFFF" opacity="0.78"/>
-      </g>
-      <g>
-        <rect x="427" y="185" width="170" height="55" rx="27.5" fill="url(#g-chip)" stroke="#A8B4C5" stroke-width="1"/>
-        <rect x="460" y="206" width="74"  height="8" rx="4" fill="#FFFFFF" opacity="0.95"/>
-        <rect x="470" y="218" width="50"  height="6" rx="3" fill="#FFFFFF" opacity="0.78"/>
-      </g>
-      <g>
-        <rect x="717" y="185" width="170" height="55" rx="27.5" fill="url(#g-chip)" stroke="#A8B4C5" stroke-width="1"/>
-        <rect x="750" y="206" width="74"  height="8" rx="4" fill="#FFFFFF" opacity="0.95"/>
-        <rect x="760" y="218" width="50"  height="6" rx="3" fill="#FFFFFF" opacity="0.78"/>
-      </g>
-    </g>
-
-    <!-- SELECTED (center, bold) -->
-    <g id="selected">
-      <!-- Chip body — slightly more saturated than peers; the converging edges do the rest -->
-      <rect x="362" y="467" width="300" height="90" rx="45" fill="url(#g-chip-selected)" stroke="#8DA0BA" stroke-width="1.5"/>
-      <!-- Text lines -->
-      <rect x="412" y="498" width="155" height="12" rx="6" fill="#FFFFFF" opacity="0.97"/>
-      <rect x="430" y="518" width="115" height="9"  rx="4.5" fill="#FFFFFF" opacity="0.82"/>
-    </g>
-
-    <!-- CHILDREN (downstream, bottom row) -->
-    <g id="children">
-      <g>
-        <rect x="137" y="784" width="170" height="55" rx="27.5" fill="url(#g-chip)" stroke="#A8B4C5" stroke-width="1"/>
-        <rect x="170" y="805" width="74"  height="8" rx="4" fill="#FFFFFF" opacity="0.95"/>
-        <rect x="180" y="817" width="50"  height="6" rx="3" fill="#FFFFFF" opacity="0.78"/>
-      </g>
-      <g>
-        <rect x="427" y="784" width="170" height="55" rx="27.5" fill="url(#g-chip)" stroke="#A8B4C5" stroke-width="1"/>
-        <rect x="460" y="805" width="74"  height="8" rx="4" fill="#FFFFFF" opacity="0.95"/>
-        <rect x="470" y="817" width="50"  height="6" rx="3" fill="#FFFFFF" opacity="0.78"/>
-      </g>
-      <g>
-        <rect x="717" y="784" width="170" height="55" rx="27.5" fill="url(#g-chip)" stroke="#A8B4C5" stroke-width="1"/>
-        <rect x="750" y="805" width="74"  height="8" rx="4" fill="#FFFFFF" opacity="0.95"/>
-        <rect x="760" y="817" width="50"  height="6" rx="3" fill="#FFFFFF" opacity="0.78"/>
-      </g>
-    </g>
+  <!-- LAYER: SELECTED CHIP (the dominant subject — ~62% of canvas width) -->
+  <g id="layer-selected">
+    <rect x="192" y="408" width="640" height="208" rx="104" fill="url(#g-chip-selected)" stroke="#5C7896" stroke-width="4"/>
+    <!-- Two bold white "text" bars centered in chip -->
+    <rect x="312" y="478" width="400" height="28" rx="14" fill="#FFFFFF" opacity="0.97"/>
+    <rect x="372" y="522" width="280" height="22" rx="11" fill="#FFFFFF" opacity="0.85"/>
   </g>
 </svg>
