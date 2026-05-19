@@ -16,6 +16,9 @@ protocol GraphRenderer: AnyObject {
     func setFocus(_ ids: Set<NodeID>?, animationDuration: CFTimeInterval)
     func focusBounds() -> CGRect
 
+    func setColoring(_ mode: NodeColoring)
+    func setBuildTimings(_ timings: BuildTimings)
+
     func refreshColors()
 
     func nodeID(atContentPoint point: CGPoint) -> NodeID?

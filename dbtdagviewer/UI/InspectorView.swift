@@ -133,6 +133,9 @@ final class InspectorView: NSView {
         if let mat = node.materialization, !mat.isEmpty {
             contentStack.addArrangedSubview(labeledRow("Materialized", value: monoText(mat)))
         }
+        if let runtime = documentProvider()?.buildTimings.executionTime[node.id] {
+            contentStack.addArrangedSubview(labeledRow("Run Time", value: monoText(Self.formatDuration(runtime))))
+        }
         if let path = node.originalFilePath, !path.isEmpty {
             contentStack.addArrangedSubview(labeledRow("Path", value: pathRow(path)))
         }
@@ -471,6 +474,26 @@ final class InspectorView: NSView {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return view
+    }
+
+    private static func formatDuration(_ t: TimeInterval) -> String {
+        if t < 1 {
+            return "\(Int((t * 1000).rounded())) ms"
+        }
+        if t < 10 {
+            return String(format: "%.2f s", t)
+        }
+        if t < 60 {
+            return String(format: "%.1f s", t)
+        }
+        let total = Int(t.rounded())
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        if h > 0 {
+            return "\(h)h \(m)m"
+        }
+        return "\(m)m \(s)s"
     }
 }
 

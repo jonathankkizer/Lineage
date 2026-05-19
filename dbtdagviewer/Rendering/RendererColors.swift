@@ -1,5 +1,10 @@
 import AppKit
 
+enum NodeColoring: Int, Sendable {
+    case kind
+    case buildTime
+}
+
 enum RendererColors {
 
     static func fill(for kind: ResourceKind) -> NSColor {
@@ -18,8 +23,36 @@ enum RendererColors {
         }
     }
 
+    static func border(for fill: NSColor) -> NSColor {
+        fill.blended(withFraction: 0.4, of: .black) ?? .black
+    }
+
     static func border(for kind: ResourceKind) -> NSColor {
-        fill(for: kind).blended(withFraction: 0.4, of: .black) ?? .black
+        border(for: fill(for: kind))
+    }
+
+    static func buildTimeFill(score: Double) -> NSColor {
+        let p = max(0, min(1, score))
+        let stops: [(Double, NSColor)] = [
+            (0.00, NSColor.systemGreen.withAlphaComponent(0.85)),
+            (0.50, NSColor.systemYellow.withAlphaComponent(0.90)),
+            (0.80, NSColor.systemOrange.withAlphaComponent(0.90)),
+            (1.00, NSColor.systemRed.withAlphaComponent(0.90)),
+        ]
+        for i in 0..<(stops.count - 1) {
+            let (p0, c0) = stops[i]
+            let (p1, c1) = stops[i + 1]
+            if p <= p1 {
+                let span = p1 - p0
+                let t = span > 0 ? CGFloat((p - p0) / span) : 0
+                return c0.blended(withFraction: t, of: c1) ?? c1
+            }
+        }
+        return stops.last!.1
+    }
+
+    static func untimedFill(for kind: ResourceKind) -> NSColor {
+        fill(for: kind).withAlphaComponent(0.18)
     }
 
     static var selection: NSColor { .controlAccentColor }

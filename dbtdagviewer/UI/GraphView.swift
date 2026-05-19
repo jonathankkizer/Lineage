@@ -136,6 +136,14 @@ final class GraphView: NSView, NSMenuItemValidation {
         }
     }
 
+    func setColoring(_ mode: NodeColoring) {
+        renderer.setColoring(mode)
+    }
+
+    func setBuildTimings(_ timings: BuildTimings) {
+        renderer.setBuildTimings(timings)
+    }
+
     // MARK: - Input
 
     override func scrollWheel(with event: NSEvent) {
