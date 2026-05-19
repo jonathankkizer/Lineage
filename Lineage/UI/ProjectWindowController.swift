@@ -186,6 +186,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         graphView.install(graph: graph, layout: layout)
         graphView.setBuildTimings(document.buildTimings)
         graphView.setColoring(coloringMode)
+        graphView.resetBulkEdgesToAuto()
         inspectorView.documentDidLoad(graph: graph)
     }
 
@@ -299,6 +300,10 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     @objc func toggleInspector(_ sender: Any?) {
         inspectorVisible.toggle()
         inspectorSplitItem.animator().isCollapsed = !inspectorVisible
+    }
+
+    @objc func toggleShowAllEdges(_ sender: Any?) {
+        graphView.setBulkEdgesEnabled(!graphView.areBulkEdgesEnabled())
     }
 
     @objc private func coloringSegmentedChanged(_ sender: NSSegmentedControl) {
@@ -546,6 +551,10 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         case #selector(toggleInspector(_:)):
             menuItem.title = inspectorVisible ? "Hide Inspector" : "Show Inspector"
             return true
+        case #selector(toggleShowAllEdges(_:)):
+            let enabled = graphView.areBulkEdgesEnabled()
+            menuItem.title = enabled ? "Hide Edges" : "Show Edges"
+            return projectDocument?.graph != nil
         case #selector(focusOnSelection(_:)):
             return selection.primary != nil
         case #selector(clearFocus(_:)):
