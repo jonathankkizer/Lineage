@@ -19,6 +19,10 @@ protocol GraphRenderer: AnyObject {
     func setColoring(_ mode: NodeColoring)
     func setBuildTimings(_ timings: BuildTimings)
 
+    func setBulkEdgesEnabled(_ enabled: Bool)
+    func areBulkEdgesEnabled() -> Bool
+    func resetBulkEdgesToAuto()
+
     func refreshColors()
 
     func nodeID(atContentPoint point: CGPoint) -> NodeID?

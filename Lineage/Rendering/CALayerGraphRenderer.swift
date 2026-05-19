@@ -29,9 +29,12 @@ final class CALayerGraphRenderer: GraphRenderer {
     private var lastAffected: Set<NodeID> = []
     private var coloringMode: NodeColoring = .kind
     private var buildTimings: BuildTimings = .empty
+    private var totalEdgeCount: Int = 0
+    private var bulkEdgesEnabled: Bool = true
 
     static let focusedOpacity: Float = 1.0
     static let unfocusedOpacity: Float = 0.07
+    static let bulkEdgeRenderCap = 800
 
     private enum LODBucket: Int { case full, noLabels, overview }
     private var lastLOD: LODBucket = .full
@@ -120,7 +123,10 @@ final class CALayerGraphRenderer: GraphRenderer {
             nodeContainerLayer.addSublayer(layer)
         }
 
+        totalEdgeCount = graph.forward.values.reduce(0) { $0 + $1.count }
+
         rebuildEdgePath()
+        applyBulkEdgeVisibility()
         rebuildHighlights()
     }
 
@@ -150,11 +156,11 @@ final class CALayerGraphRenderer: GraphRenderer {
         defer { CATransaction.commit() }
 
         let showLabels = (bucket == .full)
-        let showEdges = (bucket != .overview)
+        let nonOverview = (bucket != .overview)
 
-        edgeLayer.isHidden = !showEdges
-        edgeUpstreamLayer.isHidden = !showEdges
-        edgeDownstreamLayer.isHidden = !showEdges
+        applyBulkEdgeVisibility()
+        edgeUpstreamLayer.isHidden = !nonOverview
+        edgeDownstreamLayer.isHidden = !nonOverview
 
         for (id, layer) in nodeLayers {
             layer.isHidden = false
@@ -256,6 +262,28 @@ final class CALayerGraphRenderer: GraphRenderer {
         reapplyNodeColors()
         lastAffected.removeAll(keepingCapacity: true)
         rebuildHighlights()
+    }
+
+    func setBulkEdgesEnabled(_ enabled: Bool) {
+        guard bulkEdgesEnabled != enabled else { return }
+        bulkEdgesEnabled = enabled
+        applyBulkEdgeVisibility()
+    }
+
+    func areBulkEdgesEnabled() -> Bool { bulkEdgesEnabled }
+
+    func resetBulkEdgesToAuto() {
+        bulkEdgesEnabled = true
+        applyBulkEdgeVisibility()
+    }
+
+    private func applyBulkEdgeVisibility() {
+        let shouldShow = bulkEdgesEnabled && lastLOD != .overview
+        guard edgeLayer.isHidden == shouldShow else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        edgeLayer.isHidden = !shouldShow
+        CATransaction.commit()
     }
 
     private func reapplyNodeColors() {
@@ -360,10 +388,18 @@ final class CALayerGraphRenderer: GraphRenderer {
         let path = CGMutablePath()
         let half = layout.nodeHeight / 2
 
-        for (parent, children) in graph.forward {
-            guard let p = layout.positions[parent] else { continue }
+        let useCap = focusSet == nil && totalEdgeCount > Self.bulkEdgeRenderCap
+        let stride = useCap ? max(1, totalEdgeCount / Self.bulkEdgeRenderCap) : 1
+
+        var emitIndex = 0
+        let sortedParents = graph.forward.keys.sorted { $0.rawValue < $1.rawValue }
+        for parent in sortedParents {
+            guard let children = graph.forward[parent], let p = layout.positions[parent] else { continue }
             let parentInFocus = isInFocus(parent)
             for child in children {
+                let take = (emitIndex % stride == 0)
+                emitIndex += 1
+                guard take else { continue }
                 guard let c = layout.positions[child] else { continue }
                 if focusSet != nil, !(parentInFocus && isInFocus(child)) { continue }
                 path.move(to: CGPoint(x: p.x, y: p.y + half))

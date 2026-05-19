@@ -113,6 +113,8 @@ enum AppMenu {
         let toggleInspector = NSMenuItem(title: "Toggle Inspector", action: Selector(("toggleInspector:")), keyEquivalent: "i")
         toggleInspector.keyEquivalentModifierMask = [.command]
         menu.addItem(toggleInspector)
+
+        menu.addItem(withTitle: "Hide Edges", action: Selector(("toggleShowAllEdges:")), keyEquivalent: "")
         menu.addItem(.separator())
 
         let showItem = NSMenuItem(title: "Show", action: nil, keyEquivalent: "")

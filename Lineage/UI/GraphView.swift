@@ -144,6 +144,18 @@ final class GraphView: NSView, NSMenuItemValidation {
         renderer.setBuildTimings(timings)
     }
 
+    func setBulkEdgesEnabled(_ enabled: Bool) {
+        renderer.setBulkEdgesEnabled(enabled)
+    }
+
+    func areBulkEdgesEnabled() -> Bool {
+        renderer.areBulkEdgesEnabled()
+    }
+
+    func resetBulkEdgesToAuto() {
+        renderer.resetBulkEdgesToAuto()
+    }
+
     // MARK: - Input
 
     override func scrollWheel(with event: NSEvent) {
