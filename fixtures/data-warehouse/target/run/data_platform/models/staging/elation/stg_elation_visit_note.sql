@@ -1,0 +1,46 @@
+
+  create or replace   view dw_dev.dev_jkizer_staging.stg_elation_visit_note
+  
+  copy grants
+  
+  
+  as (
+    select
+	vn.UQ_VISIT_NOTE as uq_visit_note,
+	vn.ID as visit_note_id,
+	to_varchar(vn.PATIENT_ID) as patient_id,
+	vn.PRACTICE_ID as practice_id,
+	vn.NAME as visit_note_name,
+	date(vn.DOCUMENT_DATE) as document_date,
+	to_timestamp(vn.DOCUMENT_DATE) as document_datetime,
+	date(vn.CHART_FEED_DATE) as chart_feed_date,
+	vn.CHART_FEED_DATE as chart_feed_datetime,
+	vn.PHYSICIAN_USER_ID as physician_user_id,
+	date(vn.LAST_MODIFIED) as last_modified_date,
+	vn.LAST_MODIFIED as last_modified_datetime,
+	date(vn.CREATION_TIME) as creation_time,
+	vn.CREATION_TIME as creation_datetime,
+	vn.CREATED_BY_USER_ID as created_by_user_id,
+	to_boolean(case when vn.DELETION_TIME is not null then 1 else 0 end) as _is_deleted_record,
+	date(vn.DELETION_TIME) as deleted_date,
+	vn.DELETION_TIME as deletion_datetime,
+	vn.DELETED_BY_USER_ID as deleted_by_user_id,
+	to_boolean(case when vn.SIGNED_TIME is not null then 1 else 0 end) as is_signed,
+	date(vn.SIGNED_TIME) as signed_date,
+	vn.SIGNED_TIME as signed_datetime,
+	vn.SIGNED_BY_USER_ID as signed_by_user_id,
+	-- FROM_PLR,
+	vn.TRANSITION_OF_CARE as transition_of_care,
+	to_boolean(case when vn.MEDS_RECONCILED = 'True' then 1 else 0 end) as is_meds_reconciled,
+	to_boolean(case when vn.CURRENT_MEDS_DOCUMENTED = 'True' then 1 else 0 end) as is_current_meds_documented,
+	-- WAREHOUSE_ID,
+	date(vn.HDB_LAST_SYNC) as _last_sync_date,
+	vn.HDB_LAST_SYNC as hdb_last_sync_datetime,
+	row_number() over (partition by vn.ID order by vn.HDB_LAST_SYNC desc) as _idx,
+	sep._is_test_patient
+from elationhealth_ehdw_azure_scentralus_texas_elation_suvida_snowflake_secure_share.suvida.visit_note vn
+left join dw_dev.dev_jkizer_staging.stg_elation_patient sep 
+	on vn.PATIENT_ID = sep.elation_id
+	and sep._idx = 1
+  );
+

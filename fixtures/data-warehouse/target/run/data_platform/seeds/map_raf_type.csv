@@ -1,0 +1,12 @@
+
+    
+    
+    truncate table "DW_DEV"."DEV_JKIZER_SOURCE"."MAP_RAF_TYPE";
+    -- dbt seed --
+    
+            insert into dw_dev.dev_jkizer_source.map_raf_type (raf_type_code, age_category, hcc_engine_raf_type, hcc_engine_raf_type_description, dual_benefit_code) values
+            (%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s)
+        
+
+;
+  

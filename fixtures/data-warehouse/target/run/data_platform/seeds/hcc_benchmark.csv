@@ -1,0 +1,14 @@
+
+    
+    
+    
+    create table dw_prod.dw_source.hcc_benchmark (hcc_label text,hcc_category text,hcc_model text,expected_prevalence_perc float8)
+  ;
+    -- dbt seed --
+    
+            insert into dw_prod.dw_source.hcc_benchmark (hcc_label, hcc_category, hcc_model, expected_prevalence_perc) values
+            (%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s)
+        
+
+;
+  

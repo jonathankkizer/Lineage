@@ -1,0 +1,3 @@
+select
+	*
+from source_prod.misc.tbl_prod_elation_health_unfulfilled_care_gaps

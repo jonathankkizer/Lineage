@@ -1,0 +1,3 @@
+select
+	*
+from source_prod.caregaps.src_elation_health_care_gap

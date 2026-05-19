@@ -1,0 +1,12 @@
+
+    
+    
+    truncate table "DW_DEV"."DEV_JKIZER_SOURCE"."MAP_WELLCARE_NPI_PROVIDER_ID";
+    -- dbt seed --
+    
+            insert into dw_dev.dev_jkizer_source.map_wellcare_npi_provider_id (PCP_NPI, PROVIDER_ID) values
+            (%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s)
+        
+
+;
+  

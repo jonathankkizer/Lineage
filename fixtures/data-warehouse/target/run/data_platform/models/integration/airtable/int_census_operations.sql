@@ -1,0 +1,57 @@
+
+  
+    
+
+create or replace transient table dw_dev.dev_jkizer.int_census_operations
+    copy grants
+    
+    
+    as (select
+	census_event_skey,
+	suvida_id,
+	elation_id,
+	elation_patient_url,
+	payer_name,
+	full_name,
+	provider_name,
+	elation_location_name as location_name,
+	last_pcp_appt_date,
+	next_pcp_appt_date,
+	dual_status,
+	admit_date,
+	to_char(admit_date, 'Mon') as admit_month,
+	to_varchar(year(admit_date)) as admit_year,
+	discharge_date,
+	high_risk_patient,
+	unplanned_admission_risk_level,
+	mortality_risk_level,
+	facilities,
+	event_type,
+	diagnosis_codes,
+	diagnosis,
+	post_discharge_medrec_encounter_date,
+	iff(datediff(day, effective_discharge_date, post_discharge_medrec_encounter_date) <= 7, 'Complete', 'Incomplete') as med_reconciliation_7_day_status,
+	post_discharge_pcp_or_patient_eval_date,
+	iff(datediff(day, effective_discharge_date, post_discharge_pcp_or_patient_eval_date) <= 7, 'Complete', 'Incomplete') as post_discharge_pcp_toc_7_day_status,
+	iff(datediff(day, effective_discharge_date, post_discharge_pcp_or_patient_eval_date) <= 14, 'Complete', 'Incomplete') as post_discharge_pcp_toc_14_day_status,
+	prev_discharge_date,
+	days_since_prev_discharge,
+	iff(datediff(day, prev_discharge_date, admit_date) <= 30, '30 Day Readmit', null) as readmit_30_day_status,
+	first_report_date,
+	iff(datediff(day, effective_discharge_date, first_report_date) <= 3, true, false) as is_timely_notification,
+	post_discharge_summary_report_date,
+	pce.days_post_discharge_summary_report,
+	iff(ps.active_tag_list ilike '%tcm%','TCM Tag In Chart', 'No TCM Tag') as tcm_tag_status,
+	iff(ps.active_tag_list ilike '%hrh%','HRH Tag In Chart', 'No HRH Tag') as hrh_tag_status,
+	ps.last_huddle_date,
+	md5(cast(coalesce(cast(suvida_id as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(elation_id as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(last_pcp_appt_date as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(next_pcp_appt_date as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(max_report_date as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(active_tag_list as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(post_discharge_medrec_encounter_date as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(post_discharge_pcp_or_patient_eval_date as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(post_discharge_summary_report_date as TEXT), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(elation_location_name as TEXT), '_dbt_utils_surrogate_key_null_') as TEXT)) as census_grouping_integration_skey,
+from dw_dev.dev_jkizer.patient_census_event pce 
+left join dw_dev.dev_jkizer.patient_summary ps 
+	using (suvida_id)
+where (is_inpatient = 1 or is_er = 1 or is_observation = 1 or is_snf = 1 or is_rehab = 1)
+and year(admit_date) >= 2025 -- manual filter for airtable integration
+    )
+;
+
+
+  

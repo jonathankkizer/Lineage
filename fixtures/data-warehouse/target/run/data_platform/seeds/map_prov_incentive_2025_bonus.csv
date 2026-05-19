@@ -1,0 +1,14 @@
+
+    
+    
+    
+    create table dw_prod.dw_source.map_prov_incentive_2025_bonus (measure_name text,partial_cutpoint float8,max_cutpoint float8,weight float8)
+  ;
+    -- dbt seed --
+    
+            insert into dw_prod.dw_source.map_prov_incentive_2025_bonus (measure_name, partial_cutpoint, max_cutpoint, weight) values
+            (%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s),(%s,%s,%s,%s)
+        
+
+;
+  

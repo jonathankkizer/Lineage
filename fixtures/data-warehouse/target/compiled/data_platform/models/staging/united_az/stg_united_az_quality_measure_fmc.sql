@@ -1,0 +1,59 @@
+with recursive duplicates as (
+	select 
+		member_id, 
+		report_date, 
+		src_file_name, 
+		measure_year,
+		1 as measure_weight,
+		'STAR' as quality_measure_type,
+		source,
+		aco_flag,
+		'Follow-Up After Emergency Department Visit for People With Multiple High-Risk Chronic Conditions (7 days)' as quality_measure,
+		'Follow-Up After Emergency Department Visit for People With Multiple High-Risk Chronic Conditions (7 days)' as measure_display_name,
+		value_num as measure_detail,
+		max(iff(payer_quality_measure in ('DMC15-Follow-up after Emergency Department Visit for Patients with Multiple Chronic Conditions - Completed FollowUp .', 'DMC15-Follow-up after Emergency Department Visit for Patients with Multiple Chronic Conditions - Completed FollowUp '), value_num, null)) as num,
+		max(iff(payer_quality_measure in ('DMC15-Follow-up after Emergency Department Visit for Patients with Multiple Chronic Conditions – Eligible ED visits .', 'DMC15-Follow-up after Emergency Department Visit for Patients with Multiple Chronic Conditions – Eligible ED visits '), value_num, null)) as den,
+		1 as current_duplicate
+	from dw_dev.dev_jkizer_staging.stg_united_az_quality_measure
+	where payer_quality_measure in (
+		'DMC15-Follow-up after Emergency Department Visit for Patients with Multiple Chronic Conditions - Completed FollowUp .',
+		'DMC15-Follow-up after Emergency Department Visit for Patients with Multiple Chronic Conditions – Eligible ED visits .',
+		'DMC15-Follow-up after Emergency Department Visit for Patients with Multiple Chronic Conditions - Completed FollowUp ',
+		'DMC15-Follow-up after Emergency Department Visit for Patients with Multiple Chronic Conditions – Eligible ED visits '
+	) -- event-based quality measures; measure detail has x of y met
+	group by all
+	union all
+	select 
+		member_id, 
+		report_date, 
+		src_file_name, 
+		measure_year, 
+		measure_weight,
+		quality_measure_type,
+		source, 
+		aco_flag,
+		quality_measure,
+		measure_display_name,
+		measure_detail,
+		num,
+		den,
+		current_duplicate + 1
+	from duplicates
+	where current_duplicate < den
+)
+select
+	member_id,
+	quality_measure,
+	measure_display_name,
+	measure_year,
+	measure_weight,
+	quality_measure_type,
+	source,
+	aco_flag,
+	measure_detail || ' Event Count: ' || current_duplicate as measure_detail,
+	iff(current_duplicate > num, 0, 1) as measure_numerator, 
+	iff(current_duplicate > num, 'open', 'closed') as measure_status, 
+	report_date,
+	src_file_name,
+from duplicates
+where report_date >= '2025-08-01'

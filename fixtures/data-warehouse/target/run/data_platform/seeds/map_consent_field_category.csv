@@ -1,0 +1,14 @@
+
+    
+    
+    
+    create table dw_prod.dw_source.map_consent_field_category (source text,identifier text,category text)
+  ;
+    -- dbt seed --
+    
+            insert into dw_prod.dw_source.map_consent_field_category (source, identifier, category) values
+            (%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s)
+        
+
+;
+  

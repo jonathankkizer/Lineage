@@ -1,0 +1,11 @@
+
+    
+    
+    
+    create table dw_prod.dw_source.map_momentm_location (location_name integer,momentm_location_name integer)
+  ;
+    -- dbt seed --
+    
+
+;
+  

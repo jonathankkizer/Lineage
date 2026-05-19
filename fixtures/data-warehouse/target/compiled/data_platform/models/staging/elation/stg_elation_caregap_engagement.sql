@@ -1,0 +1,3 @@
+select
+	*
+from elationhealth_ehdw_azure_scentralus_texas_elation_suvida_snowflake_secure_share.suvida.caregaps_engagement

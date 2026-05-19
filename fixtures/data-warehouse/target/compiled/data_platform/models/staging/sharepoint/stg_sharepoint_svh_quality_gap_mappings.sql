@@ -1,0 +1,3 @@
+select 
+	*
+from source_prod.sharepoint.src_sharepoint_suvida_quality_gap_mappings

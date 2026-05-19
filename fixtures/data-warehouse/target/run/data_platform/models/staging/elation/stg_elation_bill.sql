@@ -1,0 +1,37 @@
+
+  create or replace   view dw_dev.dev_jkizer_staging.stg_elation_bill
+  
+  copy grants
+  
+  
+  as (
+    select
+	UQ_BILL as uq_bill,
+	ID as bill_id,
+	VISIT_NOTE_ID as visit_note_id,
+	PRACTICE_ID as practice_id,
+	NOTES as notes,
+	date(BILLING_DATE) as billing_date,
+	REF_NUMBER as ref_number,
+	SERVICE_LOCATION_ID as service_location_id,
+	PLACE_OF_SERVICE as place_of_service_code,
+	BILLING_STATUS as billing_status,
+	BILLING_ERROR as billing_error,
+	to_boolean(SHOW_DUAL_CODING) as is_show_dual_coding,
+	to_number(COPAY_AMOUNT) as copay_amount,
+	date(COPAY_COLLECTION_DATE) as copay_collection_date,
+	REFERRING_PROVIDER as referring_provider,
+	REFERRING_PROVIDER_STATE as referring_provider_state,
+	DEFERRED_BILL as deferred_bill,
+	date(CREATION_TIME) as creation_date,
+	CREATION_TIME as creation_datetime,
+	CREATED_BY_USER_ID as created_by_user_id,
+	date(LAST_MODIFIED) as last_modified_date,
+	LAST_MODIFIED as last_modified_datetime,
+	-- WAREHOUSE_ID,
+	HDB_LAST_SYNC as hdb_last_sync_datetime,
+	date(HDB_LAST_SYNC) as _last_sync_date,
+	row_number() over (partition by ID order by HDB_LAST_SYNC desc, LAST_MODIFIED desc) as _idx
+from elationhealth_ehdw_azure_scentralus_texas_elation_suvida_snowflake_secure_share.suvida.bill
+  );
+

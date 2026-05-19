@@ -1,0 +1,12 @@
+
+    
+    
+    truncate table "DW_DEV"."DEV_JKIZER_SOURCE"."MAP_INORGANIC_PROVIDER_INSURANCE_START_DATE";
+    -- dbt seed --
+    
+            insert into dw_dev.dev_jkizer_source.map_inorganic_provider_insurance_start_date (provider_last_name, provider_first_name, npi, payer_name, pcp_payer_start_date) values
+            (%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s)
+        
+
+;
+  

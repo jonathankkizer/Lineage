@@ -1,0 +1,12 @@
+
+    
+    
+    truncate table "DW_DEV"."DEV_JKIZER_SOURCE"."MAP_CONSENT_FIELD_RESPONSE";
+    -- dbt seed --
+    
+            insert into dw_dev.dev_jkizer_source.map_consent_field_response (question_concept, answer, is_consent) values
+            (%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s),(%s,%s,%s)
+        
+
+;
+  

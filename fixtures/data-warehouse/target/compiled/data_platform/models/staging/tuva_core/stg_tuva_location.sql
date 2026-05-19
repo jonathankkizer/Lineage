@@ -1,0 +1,15 @@
+select
+	location_id,
+	npi,
+	name,
+	facility_type,
+	parent_organization,
+	address,
+	city,
+	state,
+	zip_code,
+	latitude,
+	longitude,
+	data_source,
+	tuva_last_run,
+from suvida_tuva.core.location

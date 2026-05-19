@@ -1,0 +1,32 @@
+select
+	census_event.suvida_id,
+    census.census_event_skey,
+    census_event.admit_date, 
+    census.admit_date_supplemental,
+    coalesce(census.admit_date_supplemental, census_event.admit_date) as preferred_admit_date,
+    census_event.discharge_date,
+    census.discharge_date_supplemental, 
+    coalesce(census.discharge_date_supplemental, census_event.discharge_date) as preferred_discharge_date,
+    census_event.event_type,
+    census.event_type_supplemental,
+    census_event.facilities, 
+    census.facility_name_supplemental, 
+    census.is_patient_still_admitted,
+    census.is_true_event_supplemental,
+    is_true_readmission_supplemental,
+    is_patient_deceased_supplemental,
+    is_duplicate_event_supplemental,
+    med_rec_status_supplemental,
+    census_event.diagnosis_codes, 
+    census.diagnosis_codes_supplemental,
+    census_event.diagnosis, 
+    census.diagnosis_supplemental,
+    notes as census_operation_notes,
+    created_datetime, 
+    last_modified_datetime, 
+    last_modified_by_name, 
+    last_modified_by_email,
+    run_datetime
+from dw_dev.dev_jkizer_staging.stg_airtable_census_operations census
+inner join dw_dev.dev_jkizer.patient_census_event census_event
+    on census_event.census_event_skey = census.census_event_skey

@@ -1,0 +1,14 @@
+
+    
+    
+    
+    create table dw_dev.dev_jkizer_source.map_outreach_cohorts (cohort_key text,cohort_short_code text,cohort_name text,cohort_description text,clinical_category text,default_priority_tier integer,sla_days integer,owning_team text,active_flag boolean)
+  ;
+    -- dbt seed --
+    
+            insert into dw_dev.dev_jkizer_source.map_outreach_cohorts (cohort_key, cohort_short_code, cohort_name, cohort_description, clinical_category, default_priority_tier, sla_days, owning_team, active_flag) values
+            (%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        
+
+;
+  

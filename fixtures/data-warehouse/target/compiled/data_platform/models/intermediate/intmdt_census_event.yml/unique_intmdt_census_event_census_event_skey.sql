@@ -1,0 +1,14 @@
+
+    
+    
+
+select
+    census_event_skey as unique_field,
+    count(*) as n_records
+
+from dw_dev.dev_jkizer.intmdt_census_event
+where census_event_skey is not null
+group by census_event_skey
+having count(*) > 1
+
+
