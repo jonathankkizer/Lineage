@@ -33,7 +33,7 @@ final class CALayerGraphRenderer: GraphRenderer {
     static let focusedOpacity: Float = 1.0
     static let unfocusedOpacity: Float = 0.07
 
-    private enum LODBucket: Int { case full, noLabels, simplified, hidden }
+    private enum LODBucket: Int { case full, noLabels, overview }
     private var lastLOD: LODBucket = .full
 
     init() {
@@ -132,8 +132,7 @@ final class CALayerGraphRenderer: GraphRenderer {
 
     func setLevelOfDetail(zoomScale: CGFloat) {
         let bucket: LODBucket
-        if zoomScale < 0.1 { bucket = .hidden }
-        else if zoomScale < 0.3 { bucket = .simplified }
+        if zoomScale < 0.2 { bucket = .overview }
         else if zoomScale < 0.5 { bucket = .noLabels }
         else { bucket = .full }
 
@@ -145,10 +144,14 @@ final class CALayerGraphRenderer: GraphRenderer {
         defer { CATransaction.commit() }
 
         let showLabels = (bucket == .full)
-        let showNodes = (bucket != .hidden)
+        let showEdges = (bucket != .overview)
+
+        edgeLayer.isHidden = !showEdges
+        edgeUpstreamLayer.isHidden = !showEdges
+        edgeDownstreamLayer.isHidden = !showEdges
 
         for (id, layer) in nodeLayers {
-            layer.isHidden = !showNodes
+            layer.isHidden = false
             if showLabels {
                 if layer.contents == nil, let node = graph?.nodes[id], let size = layout?.nodeSize {
                     layer.contents = labelCache.image(text: node.id.displayName, kind: node.kind, size: size, backingScale: backingScale)
