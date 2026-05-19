@@ -99,7 +99,12 @@ final class CALayerGraphRenderer: GraphRenderer {
         self.graph = graph
         self.layout = layout
         contentBounds = layout.bounds
-        index = SpatialIndex.build(positions: layout.positions, nodeSize: layout.nodeSize)
+        index = SpatialIndex.build(
+            positions: layout.positions,
+            widths: layout.widths,
+            nodeHeight: layout.nodeHeight,
+            defaultWidth: NodeLabelMetrics.minWidth
+        )
 
         nodeContainerLayer.sublayers?.forEach { $0.removeFromSuperlayer() }
         nodeLayers.removeAll(keepingCapacity: true)
@@ -109,7 +114,8 @@ final class CALayerGraphRenderer: GraphRenderer {
 
         for (id, point) in layout.positions {
             guard let node = graph.nodes[id] else { continue }
-            let layer = makeNodeLayer(node: node, center: point, size: layout.nodeSize)
+            let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
+            let layer = makeNodeLayer(node: node, center: point, size: size)
             nodeLayers[id] = layer
             nodeContainerLayer.addSublayer(layer)
         }
@@ -153,7 +159,8 @@ final class CALayerGraphRenderer: GraphRenderer {
         for (id, layer) in nodeLayers {
             layer.isHidden = false
             if showLabels {
-                if layer.contents == nil, let node = graph?.nodes[id], let size = layout?.nodeSize {
+                if layer.contents == nil, let node = graph?.nodes[id], let layout {
+                    let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
                     layer.contents = labelCache.image(text: node.id.displayName, kind: node.kind, size: size, backingScale: backingScale)
                 }
             } else {
@@ -191,14 +198,14 @@ final class CALayerGraphRenderer: GraphRenderer {
 
     func focusBounds() -> CGRect {
         guard let focusSet, !focusSet.isEmpty, let layout else { return contentBounds }
-        let halfW = layout.nodeSize.width / 2
-        let halfH = layout.nodeSize.height / 2
+        let halfH = layout.nodeHeight / 2
         var minX = CGFloat.greatestFiniteMagnitude
         var minY = CGFloat.greatestFiniteMagnitude
         var maxX = -CGFloat.greatestFiniteMagnitude
         var maxY = -CGFloat.greatestFiniteMagnitude
         for id in focusSet {
             guard let p = layout.positions[id] else { continue }
+            let halfW = layout.width(for: id) / 2
             minX = min(minX, p.x - halfW)
             maxX = max(maxX, p.x + halfW)
             minY = min(minY, p.y - halfH)
@@ -255,21 +262,35 @@ final class CALayerGraphRenderer: GraphRenderer {
         guard let graph else { return }
         for (id, layer) in nodeLayers {
             guard let node = graph.nodes[id] else { continue }
-            let fill = resolveFill(id: id, kind: node.kind)
-            layer.backgroundColor = fill.cgColor
-            layer.borderColor = RendererColors.border(for: fill).cgColor
+            let style = resolveChipStyle(id: id, kind: node.kind)
+            layer.backgroundColor = style.fill.cgColor
+            layer.borderColor = style.border.cgColor
         }
     }
 
-    private func resolveFill(id: NodeID, kind: ResourceKind) -> NSColor {
+    private struct ChipStyle {
+        let fill: NSColor
+        let border: NSColor
+    }
+
+    private func resolveChipStyle(id: NodeID, kind: ResourceKind) -> ChipStyle {
         switch coloringMode {
         case .kind:
-            return RendererColors.fill(for: kind)
+            return ChipStyle(
+                fill: RendererColors.nodeChipFill(for: kind),
+                border: RendererColors.nodeChipBorder(for: kind)
+            )
         case .buildTime:
             if let p = buildTimings.colorScore[id] {
-                return RendererColors.buildTimeFill(score: p)
+                return ChipStyle(
+                    fill: RendererColors.buildTimeChipFill(score: p),
+                    border: RendererColors.buildTimeChipBorder(score: p)
+                )
             }
-            return RendererColors.untimedFill(for: kind)
+            return ChipStyle(
+                fill: RendererColors.untimedChipFill(for: kind),
+                border: RendererColors.untimedChipBorder(for: kind)
+            )
         }
     }
 
@@ -314,9 +335,9 @@ final class CALayerGraphRenderer: GraphRenderer {
         layer.cornerRadius = 6
         layer.cornerCurve = .continuous
         layer.borderWidth = 1
-        let fill = resolveFill(id: node.id, kind: node.kind)
-        layer.backgroundColor = fill.cgColor
-        layer.borderColor = RendererColors.border(for: fill).cgColor
+        let style = resolveChipStyle(id: node.id, kind: node.kind)
+        layer.backgroundColor = style.fill.cgColor
+        layer.borderColor = style.border.cgColor
         layer.contentsScale = backingScale
         layer.contentsGravity = .center
         layer.opacity = isInFocus(node.id) ? Self.focusedOpacity : Self.unfocusedOpacity
@@ -326,9 +347,10 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     private func rebuildLabels() {
-        guard let graph, let size = layout?.nodeSize else { return }
+        guard let graph, let layout else { return }
         for (id, layer) in nodeLayers {
             guard let node = graph.nodes[id] else { continue }
+            let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
             layer.contents = labelCache.image(text: node.id.displayName, kind: node.kind, size: size, backingScale: backingScale)
         }
     }
@@ -336,7 +358,7 @@ final class CALayerGraphRenderer: GraphRenderer {
     private func rebuildEdgePath() {
         guard let graph, let layout else { return }
         let path = CGMutablePath()
-        let half = layout.nodeSize.height / 2
+        let half = layout.nodeHeight / 2
 
         for (parent, children) in graph.forward {
             guard let p = layout.positions[parent] else { continue }
@@ -373,8 +395,8 @@ final class CALayerGraphRenderer: GraphRenderer {
         let toReset = lastAffected.subtracting(affected)
         for id in toReset {
             guard let layer = nodeLayers[id], let kind = graph?.nodes[id]?.kind else { continue }
-            let fill = resolveFill(id: id, kind: kind)
-            layer.borderColor = RendererColors.border(for: fill).cgColor
+            let style = resolveChipStyle(id: id, kind: kind)
+            layer.borderColor = style.border.cgColor
             layer.borderWidth = 1
         }
 
@@ -393,8 +415,8 @@ final class CALayerGraphRenderer: GraphRenderer {
                 layer.borderColor = RendererColors.edgeDownstream.cgColor
                 layer.borderWidth = 1.5
             } else if let kind = graph?.nodes[id]?.kind {
-                let fill = resolveFill(id: id, kind: kind)
-                layer.borderColor = RendererColors.border(for: fill).cgColor
+                let style = resolveChipStyle(id: id, kind: kind)
+                layer.borderColor = style.border.cgColor
                 layer.borderWidth = 1
             }
         }
@@ -408,7 +430,7 @@ final class CALayerGraphRenderer: GraphRenderer {
             return
         }
 
-        let halfH = layout.nodeSize.height / 2
+        let halfH = layout.nodeHeight / 2
         if let anchor = highlightAnchor, let ap = layout.positions[anchor] {
             let upPath = CGMutablePath()
             for parent in graph.parents(of: anchor) {

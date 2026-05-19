@@ -1,5 +1,33 @@
 import AppKit
 
+nonisolated enum NodeLabelMetrics {
+    static let fontSize: CGFloat = 12
+    static let horizontalInset: CGFloat = 10
+    static let verticalInset: CGFloat = 4
+    static let minWidth: CGFloat = 80
+    static let maxWidth: CGFloat = 220
+    static let height: CGFloat = 30
+
+    static func font() -> NSFont {
+        NSFont.systemFont(ofSize: fontSize, weight: .medium)
+    }
+
+    static func measuredTextWidth(_ text: String) -> CGFloat {
+        let attrs: [NSAttributedString.Key: Any] = [.font: font()]
+        let measured = (text as NSString).size(withAttributes: attrs).width
+        return measured.rounded(.up)
+    }
+
+    static func nodeWidth(for text: String) -> CGFloat {
+        let needed = measuredTextWidth(text) + horizontalInset * 2
+        return min(max(needed, minWidth), maxWidth)
+    }
+
+    static func isTruncated(_ text: String) -> Bool {
+        measuredTextWidth(text) + horizontalInset * 2 > maxWidth
+    }
+}
+
 @MainActor
 final class NodeLabelCache {
 
@@ -47,16 +75,21 @@ final class NodeLabelCache {
 
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center
-        paragraph.lineBreakMode = .byTruncatingMiddle
+        paragraph.lineBreakMode = .byTruncatingTail
 
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12, weight: .medium),
-            .foregroundColor: RendererColors.labelText,
+            .font: NodeLabelMetrics.font(),
+            .foregroundColor: RendererColors.labelText(for: kind),
             .paragraphStyle: paragraph,
         ]
 
         let attr = NSAttributedString(string: text, attributes: attrs)
-        let insets = NSEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
+        let insets = NSEdgeInsets(
+            top: NodeLabelMetrics.verticalInset,
+            left: NodeLabelMetrics.horizontalInset,
+            bottom: NodeLabelMetrics.verticalInset,
+            right: NodeLabelMetrics.horizontalInset
+        )
         let drawRect = NSRect(
             x: insets.left,
             y: insets.top,

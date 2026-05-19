@@ -11,18 +11,24 @@ nonisolated struct SpatialIndex: Sendable {
         let y: Int
     }
 
-    static func build(positions: [NodeID: CGPoint], nodeSize: CGSize) -> SpatialIndex {
-        let cellSize = max(nodeSize.width, nodeSize.height) * 3
+    static func build(
+        positions: [NodeID: CGPoint],
+        widths: [NodeID: CGFloat],
+        nodeHeight: CGFloat,
+        defaultWidth: CGFloat
+    ) -> SpatialIndex {
+        let cellSize = max(defaultWidth, nodeHeight) * 3
         var cells: [Cell: [NodeID]] = [:]
         var nodeRects: [NodeID: CGRect] = [:]
         nodeRects.reserveCapacity(positions.count)
 
         for (id, p) in positions {
+            let w = widths[id] ?? defaultWidth
             let r = CGRect(
-                x: p.x - nodeSize.width / 2,
-                y: p.y - nodeSize.height / 2,
-                width: nodeSize.width,
-                height: nodeSize.height
+                x: p.x - w / 2,
+                y: p.y - nodeHeight / 2,
+                width: w,
+                height: nodeHeight
             )
             nodeRects[id] = r
             for cell in Self.cells(spanning: r, cellSize: cellSize) {
