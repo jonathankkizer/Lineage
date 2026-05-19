@@ -1,3 +1,0 @@
-select
-*
-from dw_dev.dev_jkizer.fct_twilio_patient_phone_outreach

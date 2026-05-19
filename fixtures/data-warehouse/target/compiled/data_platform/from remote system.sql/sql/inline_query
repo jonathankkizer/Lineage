@@ -1,1 +1,0 @@
-with patient_cohort_counts as (select suvida_id, count(distinct cohort_key) as n_cohorts from dw_dev.dev_jkizer.int_outreach_episode_snapshot group by 1) select n_cohorts, count(*) as patient_count from patient_cohort_counts group by 1 order by 1 desc

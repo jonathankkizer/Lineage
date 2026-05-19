@@ -1,1 +1,0 @@
-select * from dw_dev.dev_jkizer.patient_huddle_new

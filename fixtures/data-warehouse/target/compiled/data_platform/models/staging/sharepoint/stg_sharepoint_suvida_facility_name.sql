@@ -1,2 +1,0 @@
-select *
-from source_prod.sharepoint.src_sharepoint_suvida_facility_codes

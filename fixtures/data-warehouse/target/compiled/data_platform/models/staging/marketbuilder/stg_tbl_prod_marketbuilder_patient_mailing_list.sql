@@ -1,3 +1,0 @@
-select
-	*
-from source_prod.marketbuilder.tbl_prod_marketbuilder_patient_mailing_list

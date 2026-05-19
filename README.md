@@ -9,7 +9,7 @@ See [`docs/design.md`](docs/design.md) for the pitch, scope, architecture, and r
 - `dbtdagviewer/` — Swift sources (auto-included by Xcode's `PBXFileSystemSynchronizedRootGroup`).
 - `dbtdagviewer.xcodeproj/` — Xcode project.
 - `docs/` — design docs.
-- `fixtures/data-warehouse/target/` — a real dbt run's `target/` directory, used as the dev fixture. Open this folder from the app to see ~1,593 nodes.
+- `fixtures/` — gitignored. Drop a real dbt project's `target/` directory here (or anywhere on disk) and open it from the app for development.
 
 ## Building
 
