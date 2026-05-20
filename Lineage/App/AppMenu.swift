@@ -157,6 +157,9 @@ enum AppMenu {
 
     private static func helpMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "Help")
+        menu.addItem(withTitle: "Check for Updates\u{2026}", action: #selector(LineageActions.checkForUpdates(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: "Automatically Check for Updates", action: #selector(LineageActions.toggleAutomaticUpdateChecks(_:)), keyEquivalent: "")
+        menu.addItem(.separator())
         menu.addItem(withTitle: "Lineage GitHub Releases", action: #selector(LineageActions.openReleasesPage(_:)), keyEquivalent: "")
         NSApp.helpMenu = menu
 

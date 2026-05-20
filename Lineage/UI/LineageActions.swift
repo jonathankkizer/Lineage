@@ -38,4 +38,6 @@ import AppKit
 
     // Help
     func openReleasesPage(_ sender: Any?)
+    func checkForUpdates(_ sender: Any?)
+    func toggleAutomaticUpdateChecks(_ sender: Any?)
 }
