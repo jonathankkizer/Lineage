@@ -230,7 +230,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             let item = NSSearchToolbarItem(itemIdentifier: itemIdentifier)
             item.label = "Filter"
             item.paletteLabel = "Filter"
-            item.toolTip = "Filter nodes by name (⌘F)"
+            item.toolTip = "Filter nodes by name. Use +name / name+ / +name+ / N+name / name+N for lineage selection. (⌘F)"
             item.searchField.placeholderString = "Filter"
             item.searchField.delegate = self
             item.preferredWidthForSearchField = 240
@@ -434,52 +434,76 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     }
 
     private struct Visibility {
-        var nodes: Set<NodeID>?
+        var scope: SelectionScope?
         var focusEntry: FocusEntry?
         var focusNodeCount: Int
         var searchMatchCount: Int?
     }
 
     private func computeVisibility() -> Visibility {
-        var v = Visibility(nodes: nil, focusEntry: focusHistory.current, focusNodeCount: 0, searchMatchCount: nil)
+        var v = Visibility(scope: nil, focusEntry: focusHistory.current, focusNodeCount: 0, searchMatchCount: nil)
         guard let graph = projectDocument?.graph else { return v }
 
-        var combined: Set<NodeID>?
-
+        var focusScope: SelectionScope?
         if let entry = focusHistory.current {
-            let sub = SubgraphSelector.subgraph(
+            focusScope = Self.lineageScope(
                 graph: graph,
                 anchor: entry.anchor,
                 upstreamHops: entry.upstreamHops,
                 downstreamHops: entry.downstreamHops
             )
-            combined = sub.nodes
-            v.focusNodeCount = sub.nodes.count
+            v.focusNodeCount = focusScope?.nodes.count ?? 0
         }
 
-        if !searchQuery.isEmpty {
-            let q = searchQuery.lowercased()
-            var matches: Set<NodeID> = []
-            for (id, node) in graph.nodes where node.name.lowercased().contains(q) {
-                matches.insert(id)
-            }
-            v.searchMatchCount = matches.count
-            if let c = combined {
-                combined = c.intersection(matches)
-            } else {
-                combined = matches
-            }
+        var searchScope: SelectionScope?
+        if !searchQuery.isEmpty, let selector = NodeSelector.parse(searchQuery) {
+            let s = selector.apply(to: graph)
+            searchScope = s
+            v.searchMatchCount = s.nodes.count
         }
 
-        v.nodes = combined
+        switch (focusScope, searchScope) {
+        case let (focus?, search?):
+            // Both active: intersect node sets; directional info doesn't compose cleanly,
+            // so fall back to flat scope. The visible nodes are still correctly clipped.
+            v.scope = SelectionScope(
+                nodes: focus.nodes.intersection(search.nodes),
+                upstream: nil,
+                downstream: nil
+            )
+        case let (focus?, nil):
+            v.scope = focus
+        case let (nil, search?):
+            v.scope = search
+        case (nil, nil):
+            v.scope = nil
+        }
         return v
     }
 
-    private func applyCurrentFocus(animated: Bool) {
+    private static func lineageScope(graph: Graph, anchor: NodeID, upstreamHops: Int, downstreamHops: Int) -> SelectionScope {
+        var upstream: Set<NodeID> = [anchor]
+        var downstream: Set<NodeID> = [anchor]
+        if upstreamHops > 0 {
+            let sub = SubgraphSelector.subgraph(graph: graph, anchor: anchor, upstreamHops: upstreamHops, downstreamHops: 0)
+            upstream.formUnion(sub.nodes)
+        }
+        if downstreamHops > 0 {
+            let sub = SubgraphSelector.subgraph(graph: graph, anchor: anchor, upstreamHops: 0, downstreamHops: downstreamHops)
+            downstream.formUnion(sub.nodes)
+        }
+        return SelectionScope(
+            nodes: upstream.union(downstream),
+            upstream: upstreamHops > 0 ? upstream : nil,
+            downstream: downstreamHops > 0 ? downstream : nil
+        )
+    }
+
+    private func applyCurrentFocus(animated: Bool, reframe: Bool = true) {
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let duration: CFTimeInterval = (animated && !reduceMotion) ? 0.30 : 0
         let v = computeVisibility()
-        graphView.applyFocus(nodes: v.nodes, animationDuration: duration)
+        graphView.applyFocus(scope: v.scope, animationDuration: duration, reframe: reframe)
         updateSubtitle(v)
     }
 
@@ -541,7 +565,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     func controlTextDidChange(_ notification: Notification) {
         guard let field = notification.object as? NSSearchField else { return }
         searchQuery = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        applyCurrentFocus(animated: false)
+        applyCurrentFocus(animated: false, reframe: false)
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {

@@ -25,7 +25,7 @@ final class CALayerGraphRenderer: GraphRenderer {
     private var currentSelection: Set<NodeID> = []
     private var primarySelection: NodeID?
     private var currentHover: NodeID?
-    private var focusSet: Set<NodeID>?
+    private var focusScope: SelectionScope?
     private var lastAffected: Set<NodeID> = []
     private var coloringMode: NodeColoring = .kind
     private var buildTimings: BuildTimings = .empty
@@ -113,7 +113,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         nodeLayers.removeAll(keepingCapacity: true)
         nodeLayers.reserveCapacity(graph.nodes.count)
         lastAffected.removeAll(keepingCapacity: true)
-        focusSet = nil
+        focusScope = nil
 
         for (id, point) in layout.positions {
             guard let node = graph.nodes[id] else { continue }
@@ -187,8 +187,8 @@ final class CALayerGraphRenderer: GraphRenderer {
         rebuildHighlights()
     }
 
-    func setFocus(_ ids: Set<NodeID>?, animationDuration: CFTimeInterval) {
-        focusSet = ids
+    func setFocus(_ scope: SelectionScope?, animationDuration: CFTimeInterval) {
+        focusScope = scope
         CATransaction.begin()
         if animationDuration > 0 {
             CATransaction.setAnimationDuration(animationDuration)
@@ -203,13 +203,13 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     func focusBounds() -> CGRect {
-        guard let focusSet, !focusSet.isEmpty, let layout else { return contentBounds }
+        guard let focusScope, !focusScope.nodes.isEmpty, let layout else { return contentBounds }
         let halfH = layout.nodeHeight / 2
         var minX = CGFloat.greatestFiniteMagnitude
         var minY = CGFloat.greatestFiniteMagnitude
         var maxX = -CGFloat.greatestFiniteMagnitude
         var maxY = -CGFloat.greatestFiniteMagnitude
-        for id in focusSet {
+        for id in focusScope.nodes {
             guard let p = layout.positions[id] else { continue }
             let halfW = layout.width(for: id) / 2
             minX = min(minX, p.x - halfW)
@@ -330,8 +330,26 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     private func isInFocus(_ id: NodeID) -> Bool {
-        guard let focusSet else { return true }
-        return focusSet.contains(id)
+        guard let focusScope else { return true }
+        return focusScope.nodes.contains(id)
+    }
+
+    private func edgeBelongsToScope(parent: NodeID, child: NodeID) -> Bool {
+        guard let focusScope else { return true }
+        // Lineage scope: an edge belongs iff both ends are in the same direction set.
+        // Anchor lives in both sets, so anchor-incident edges always pass.
+        if let upstream = focusScope.upstream, let downstream = focusScope.downstream {
+            return (upstream.contains(parent) && upstream.contains(child)) ||
+                   (downstream.contains(parent) && downstream.contains(child))
+        }
+        if let upstream = focusScope.upstream {
+            return upstream.contains(parent) && upstream.contains(child)
+        }
+        if let downstream = focusScope.downstream {
+            return downstream.contains(parent) && downstream.contains(child)
+        }
+        // Non-lineage scope (substring): fall back to node-set membership only.
+        return focusScope.nodes.contains(parent) && focusScope.nodes.contains(child)
     }
 
     func setMarquee(_ rect: CGRect?) {
@@ -392,20 +410,19 @@ final class CALayerGraphRenderer: GraphRenderer {
         let path = CGMutablePath()
         let half = layout.nodeHeight / 2
 
-        let useCap = focusSet == nil && totalEdgeCount > Self.bulkEdgeRenderCap
+        let useCap = focusScope == nil && totalEdgeCount > Self.bulkEdgeRenderCap
         let stride = useCap ? max(1, totalEdgeCount / Self.bulkEdgeRenderCap) : 1
 
         var emitIndex = 0
         let sortedParents = graph.forward.keys.sorted { $0.rawValue < $1.rawValue }
         for parent in sortedParents {
             guard let children = graph.forward[parent], let p = layout.positions[parent] else { continue }
-            let parentInFocus = isInFocus(parent)
             for child in children {
                 let take = (emitIndex % stride == 0)
                 emitIndex += 1
                 guard take else { continue }
                 guard let c = layout.positions[child] else { continue }
-                if focusSet != nil, !(parentInFocus && isInFocus(child)) { continue }
+                guard edgeBelongsToScope(parent: parent, child: child) else { continue }
                 path.move(to: CGPoint(x: p.x, y: p.y + half))
                 path.addLine(to: CGPoint(x: c.x, y: c.y - half))
             }
@@ -471,9 +488,9 @@ final class CALayerGraphRenderer: GraphRenderer {
         }
 
         let halfH = layout.nodeHeight / 2
-        if let anchor = highlightAnchor, let ap = layout.positions[anchor] {
+        if let anchor = highlightAnchor, let ap = layout.positions[anchor], isInFocus(anchor) {
             let upPath = CGMutablePath()
-            for parent in graph.parents(of: anchor) {
+            for parent in graph.parents(of: anchor) where edgeBelongsToScope(parent: parent, child: anchor) {
                 guard let p = layout.positions[parent] else { continue }
                 upPath.move(to: CGPoint(x: p.x, y: p.y + halfH))
                 upPath.addLine(to: CGPoint(x: ap.x, y: ap.y - halfH))
@@ -481,7 +498,7 @@ final class CALayerGraphRenderer: GraphRenderer {
             edgeUpstreamLayer.path = upPath
 
             let downPath = CGMutablePath()
-            for child in graph.children(of: anchor) {
+            for child in graph.children(of: anchor) where edgeBelongsToScope(parent: anchor, child: child) {
                 guard let c = layout.positions[child] else { continue }
                 downPath.move(to: CGPoint(x: ap.x, y: ap.y + halfH))
                 downPath.addLine(to: CGPoint(x: c.x, y: c.y - halfH))
