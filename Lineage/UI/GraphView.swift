@@ -268,6 +268,7 @@ final class GraphView: NSView, NSMenuItemValidation {
 
     private func navigateSelection(_ direction: DAGNavigation.Direction) {
         guard hasContent, let graph = currentGraph, let layout = currentLayout else { return }
+        let hadSelection = selection.primary.flatMap { graph.nodes[$0] } != nil
         let next: NodeID?
         if let current = selection.primary, graph.nodes[current] != nil {
             next = DAGNavigation.neighbor(
@@ -286,7 +287,16 @@ final class GraphView: NSView, NSMenuItemValidation {
                 visible: visibleNodes
             )
         }
-        guard let next else { return }
+        guard let next else {
+            let isVertical: Bool = switch direction {
+            case .up, .down: true
+            case .left, .right: false
+            }
+            if hadSelection, isVertical, NavigationSoundPreference.isEnabled {
+                NSSound.beep()
+            }
+            return
+        }
         selection.replace(with: next)
         revealInViewport(nodeID: next, layout: layout)
     }

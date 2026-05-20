@@ -48,6 +48,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             return updateCoordinator != nil
         case #selector(checkForUpdates(_:)):
             return updateCoordinator != nil
+        case #selector(toggleNavigationBeep(_:)):
+            menuItem.state = NavigationSoundPreference.isEnabled ? .on : .off
+            return true
         default:
             return true
         }
@@ -111,5 +114,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func toggleAutomaticUpdateChecks(_ sender: Any?) {
         guard let coordinator = updateCoordinator else { return }
         coordinator.setAutoCheckEnabled(!coordinator.isAutoCheckEnabled)
+    }
+
+    @objc func toggleNavigationBeep(_ sender: Any?) {
+        NavigationSoundPreference.isEnabled.toggle()
     }
 }
