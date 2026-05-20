@@ -59,6 +59,7 @@ enum AppMenu {
     private static func fileMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "File")
         menu.addItem(withTitle: "Open\u{2026}", action: #selector(NSDocumentController.openDocument(_:)), keyEquivalent: "o")
+        menu.addItem(withTitle: "Open Demo Project", action: #selector(LineageActions.openDemoProject(_:)), keyEquivalent: "")
 
         let openRecent = NSMenuItem(title: "Open Recent", action: nil, keyEquivalent: "")
         let openRecentMenu = NSMenu(title: "Open Recent")
@@ -143,6 +144,8 @@ enum AppMenu {
         let menu = NSMenu(title: "Window")
         menu.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
         menu.addItem(withTitle: "Zoom", action: #selector(NSWindow.performZoom(_:)), keyEquivalent: "")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Welcome to Lineage", action: #selector(LineageActions.showWelcomeWindow(_:)), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Bring All to Front", action: #selector(NSApplication.arrangeInFront(_:)), keyEquivalent: "")
         NSApp.windowsMenu = menu

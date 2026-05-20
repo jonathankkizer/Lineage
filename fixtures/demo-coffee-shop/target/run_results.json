@@ -1,0 +1,730 @@
+{
+  "metadata": {
+    "dbt_schema_version": "https://schemas.getdbt.com/dbt/run-results/v6.json",
+    "dbt_version": "1.10.4",
+    "generated_at": "2026-05-19T13:00:00.000000Z",
+    "invocation_id": "f7b1f8c4-1c41-4d2d-8a3a-5f7c2c6c2b00",
+    "env": {}
+  },
+  "results": [
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.000000Z",
+          "completed_at": "2026-05-19T12:58:00.002065Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.003142Z",
+          "completed_at": "2026-05-19T12:58:00.058644Z"
+        }
+      ],
+      "thread_id": "Thread-2 (worker)",
+      "execution_time": 0.05750202613314268,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 19572
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "seed.beanstalk_coffee.country_codes",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.000000Z",
+          "completed_at": "2026-05-19T12:58:00.003626Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.005125Z",
+          "completed_at": "2026-05-19T12:58:00.079652Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 0.07652741340331704,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 21722
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "seed.beanstalk_coffee.product_categories",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.075644Z",
+          "completed_at": "2026-05-19T12:58:00.081618Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.082684Z",
+          "completed_at": "2026-05-19T12:58:00.569270Z"
+        }
+      ],
+      "thread_id": "Thread-2 (worker)",
+      "execution_time": 0.4885860893975488,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 28556
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.stg_segment__web_events",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.000000Z",
+          "completed_at": "2026-05-19T12:58:00.003384Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.003818Z",
+          "completed_at": "2026-05-19T12:58:00.201988Z"
+        }
+      ],
+      "thread_id": "Thread-1 (worker)",
+      "execution_time": 0.20017001170217724,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 10135
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.stg_shop__customers",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.131652Z",
+          "completed_at": "2026-05-19T12:58:00.136829Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.137301Z",
+          "completed_at": "2026-05-19T12:58:00.440820Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 0.3055193198016609,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 43730
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.stg_shop__inventory_snapshots",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.479820Z",
+          "completed_at": "2026-05-19T12:58:00.484026Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.485120Z",
+          "completed_at": "2026-05-19T12:58:00.874837Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 0.3917172296244827,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 12335
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.stg_shop__order_items",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.000000Z",
+          "completed_at": "2026-05-19T12:58:00.005089Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.005352Z",
+          "completed_at": "2026-05-19T12:58:00.319178Z"
+        }
+      ],
+      "thread_id": "Thread-3 (worker)",
+      "execution_time": 0.3158258127762848,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 33362
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.stg_shop__orders",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.933837Z",
+          "completed_at": "2026-05-19T12:58:00.938504Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.939115Z",
+          "completed_at": "2026-05-19T12:58:01.052180Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 0.11506476690885309,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 18375
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.stg_shop__products",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.227988Z",
+          "completed_at": "2026-05-19T12:58:00.233760Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.235260Z",
+          "completed_at": "2026-05-19T12:58:00.379393Z"
+        }
+      ],
+      "thread_id": "Thread-1 (worker)",
+      "execution_time": 0.14613269728568506,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 7095
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.stg_shop__subscriptions",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.614270Z",
+          "completed_at": "2026-05-19T12:58:00.619991Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.621437Z",
+          "completed_at": "2026-05-19T12:58:00.911967Z"
+        }
+      ],
+      "thread_id": "Thread-2 (worker)",
+      "execution_time": 0.2925300231871067,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 36420
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.stg_stripe__charges",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.328178Z",
+          "completed_at": "2026-05-19T12:58:00.333661Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.334397Z",
+          "completed_at": "2026-05-19T12:58:01.610401Z"
+        }
+      ],
+      "thread_id": "Thread-3 (worker)",
+      "execution_time": 1.2780035317619678,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 17459
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.dim_products",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.388393Z",
+          "completed_at": "2026-05-19T12:58:00.391967Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.392197Z",
+          "completed_at": "2026-05-19T12:58:02.677451Z"
+        }
+      ],
+      "thread_id": "Thread-1 (worker)",
+      "execution_time": 2.2872544310746474,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 42921
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.dim_customers",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:01.063180Z",
+          "completed_at": "2026-05-19T12:58:01.067025Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:01.067851Z",
+          "completed_at": "2026-05-19T12:58:02.841331Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 1.775480244638055,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 10659
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.dim_subscriptions",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:02.880331Z",
+          "completed_at": "2026-05-19T12:58:02.884574Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:02.885001Z",
+          "completed_at": "2026-05-19T12:58:06.849963Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 3.9669622589579996,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 2983
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.fct_order_items",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:06.907963Z",
+          "completed_at": "2026-05-19T12:58:06.911653Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:06.913025Z",
+          "completed_at": "2026-05-19T12:58:12.098327Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 5.1873019259821165,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 30247
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.fct_orders",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:01.622401Z",
+          "completed_at": "2026-05-19T12:58:01.626795Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:01.627503Z",
+          "completed_at": "2026-05-19T12:58:04.341668Z"
+        }
+      ],
+      "thread_id": "Thread-3 (worker)",
+      "execution_time": 2.7161648386505655,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 3666
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.fct_subscription_events",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:00.922967Z",
+          "completed_at": "2026-05-19T12:58:00.928324Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:00.928865Z",
+          "completed_at": "2026-05-19T12:58:05.894856Z"
+        }
+      ],
+      "thread_id": "Thread-2 (worker)",
+      "execution_time": 4.967990757181447,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 2610
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.fct_web_sessions",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:12.153327Z",
+          "completed_at": "2026-05-19T12:58:12.158689Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:12.159672Z",
+          "completed_at": "2026-05-19T12:58:19.899743Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 7.742070544297881,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 18894
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.mart_product_performance",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:02.702451Z",
+          "completed_at": "2026-05-19T12:58:02.704907Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:02.705252Z",
+          "completed_at": "2026-05-19T12:58:05.279889Z"
+        }
+      ],
+      "thread_id": "Thread-1 (worker)",
+      "execution_time": 2.5766366876102227,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 23321
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.fct_payments",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:05.925856Z",
+          "completed_at": "2026-05-19T12:58:05.931697Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:05.932665Z",
+          "completed_at": "2026-05-19T12:58:13.725863Z"
+        }
+      ],
+      "thread_id": "Thread-2 (worker)",
+      "execution_time": 7.795198487921321,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 47114
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.mart_acquisition_funnel",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:19.933743Z",
+          "completed_at": "2026-05-19T12:58:19.936181Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:19.936803Z",
+          "completed_at": "2026-05-19T12:58:31.768968Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 11.83416544298955,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 37492
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.mart_customer_lifetime_value",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "success",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:31.795968Z",
+          "completed_at": "2026-05-19T12:58:31.799295Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:31.799575Z",
+          "completed_at": "2026-05-19T12:58:38.566918Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 6.769343431906503,
+      "adapter_response": {
+        "_message": "SELECT 1",
+        "code": "SELECT",
+        "rows_affected": 33445
+      },
+      "message": "OK",
+      "failures": null,
+      "unique_id": "model.beanstalk_coffee.mart_daily_revenue",
+      "compiled": true,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "no-op",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:04.389668Z",
+          "completed_at": "2026-05-19T12:58:04.395648Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:04.396349Z",
+          "completed_at": "2026-05-19T12:58:04.400812Z"
+        }
+      ],
+      "thread_id": "Thread-3 (worker)",
+      "execution_time": 0.006462742660503153,
+      "adapter_response": {},
+      "message": "NO-OP",
+      "failures": null,
+      "unique_id": "exposure.beanstalk_coffee.executive_kpi_dashboard",
+      "compiled": false,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "no-op",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:38.603918Z",
+          "completed_at": "2026-05-19T12:58:38.607416Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:38.608340Z",
+          "completed_at": "2026-05-19T12:58:38.612083Z"
+        }
+      ],
+      "thread_id": "Thread-4 (worker)",
+      "execution_time": 0.0057434723718805996,
+      "adapter_response": {},
+      "message": "NO-OP",
+      "failures": null,
+      "unique_id": "exposure.beanstalk_coffee.marketing_attribution_sheet",
+      "compiled": false,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    },
+    {
+      "status": "no-op",
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-05-19T12:58:13.754863Z",
+          "completed_at": "2026-05-19T12:58:13.759426Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-05-19T12:58:13.760594Z",
+          "completed_at": "2026-05-19T12:58:13.764846Z"
+        }
+      ],
+      "thread_id": "Thread-2 (worker)",
+      "execution_time": 0.00625195886133282,
+      "adapter_response": {},
+      "message": "NO-OP",
+      "failures": null,
+      "unique_id": "exposure.beanstalk_coffee.ops_inventory_tracker",
+      "compiled": false,
+      "compiled_code": null,
+      "relation_name": null,
+      "batch_results": null
+    }
+  ],
+  "elapsed_time": 61.455,
+  "args": {
+    "which": "build",
+    "log_format": "default",
+    "send_anonymous_usage_stats": false
+  }
+}

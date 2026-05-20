@@ -28,5 +28,10 @@ Package.resolved
 ## Misc
 *.log
 
-## Dev fixtures (not bundled, not tracked)
-fixtures/
+## Dev fixtures — contents ignored by default (e.g. the large data-warehouse
+## fixture isn't tracked), with the bundled demo project allow-listed because
+## it's shipped in the .app and the build phase reads from it. The pattern has
+## to be `fixtures/*` rather than `fixtures/` so the negation below works —
+## git can't un-ignore a file under a fully-ignored directory.
+fixtures/*
+!fixtures/demo-coffee-shop/

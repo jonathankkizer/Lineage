@@ -55,6 +55,7 @@
 				ABFCACA82FBC01E500054312 /* Sources */,
 				ABFCACA92FBC01E500054312 /* Frameworks */,
 				ABFCACAA2FBC01E500054312 /* Resources */,
+				ABFCAD0000000000C0FFEEDB /* Copy Demo Project */,
 			);
 			buildRules = (
 			);
@@ -113,6 +114,39 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		ABFCAD0000000000C0FFEEDB /* Copy Demo Project */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/fixtures/demo-coffee-shop/dbt_project.yml",
+				"$(SRCROOT)/fixtures/demo-coffee-shop/target/manifest.json",
+				"$(SRCROOT)/fixtures/demo-coffee-shop/target/run_results.json",
+				"$(SRCROOT)/fixtures/demo-coffee-shop/models/staging/shop/_sources.yml",
+				"$(SRCROOT)/fixtures/demo-coffee-shop/models/staging/stripe/_sources.yml",
+				"$(SRCROOT)/fixtures/demo-coffee-shop/models/staging/segment/_sources.yml",
+			);
+			name = "Copy Demo Project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DemoProject/dbt_project.yml",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DemoProject/target/manifest.json",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DemoProject/target/run_results.json",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DemoProject/models/staging/shop/_sources.yml",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DemoProject/models/staging/stripe/_sources.yml",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DemoProject/models/staging/segment/_sources.yml",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n\nSRC=\"${SRCROOT}/fixtures/demo-coffee-shop\"\nDST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/DemoProject\"\n\nif [ ! -d \"$SRC\" ]; then\n  echo \"warning: $SRC not found; skipping demo bundling\"\n  exit 0\nfi\n\nmkdir -p \"$DST/target\" \\\n         \"$DST/models/staging/shop\" \\\n         \"$DST/models/staging/stripe\" \\\n         \"$DST/models/staging/segment\"\n\ncp \"$SRC/dbt_project.yml\"                              \"$DST/dbt_project.yml\"\ncp \"$SRC/target/manifest.json\"                         \"$DST/target/manifest.json\"\ncp \"$SRC/target/run_results.json\"                      \"$DST/target/run_results.json\"\ncp \"$SRC/models/staging/shop/_sources.yml\"             \"$DST/models/staging/shop/_sources.yml\"\ncp \"$SRC/models/staging/stripe/_sources.yml\"           \"$DST/models/staging/stripe/_sources.yml\"\ncp \"$SRC/models/staging/segment/_sources.yml\"          \"$DST/models/staging/segment/_sources.yml\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		ABFCACA82FBC01E500054312 /* Sources */ = {
