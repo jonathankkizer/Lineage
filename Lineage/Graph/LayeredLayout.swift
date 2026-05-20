@@ -39,8 +39,8 @@ enum LayeredLayout {
 
         var widths: [NodeID: CGFloat] = [:]
         widths.reserveCapacity(graph.nodes.count)
-        for (id, _) in graph.nodes {
-            widths[id] = NodeLabelMetrics.nodeWidth(for: id.displayName)
+        for (id, node) in graph.nodes {
+            widths[id] = NodeLabelMetrics.nodeWidth(for: node.name)
         }
 
         let topo = Topology.topologicallySort(graph)
