@@ -12,6 +12,10 @@ final class GraphView: NSView, NSMenuItemValidation {
     private var trackingArea: NSTrackingArea?
     private var magnifyRecognizer: NSMagnificationGestureRecognizer!
 
+    private var currentGraph: Graph?
+    private var currentLayout: GraphLayout?
+    private var visibleNodes: Set<NodeID>?
+
     private enum DragState {
         case none
         case marquee(start: CGPoint)
@@ -95,9 +99,16 @@ final class GraphView: NSView, NSMenuItemValidation {
     }
 
     func install(graph: Graph, layout: GraphLayout) {
+        currentGraph = graph
+        currentLayout = layout
+        visibleNodes = nil
         renderer.install(graph: graph, layout: layout)
         hasContent = true
         zoomToFit()
+    }
+
+    func setVisibleNodes(_ nodes: Set<NodeID>?) {
+        visibleNodes = nodes
     }
 
     func zoomToFit() {
@@ -211,10 +222,19 @@ final class GraphView: NSView, NSMenuItemValidation {
 
     override func keyDown(with event: NSEvent) {
         // Raw Return/Enter focuses the selection without requiring the Cmd modifier
-        // the menu shortcut uses (Cmd+Return). Esc clears focus. Menu key equivalents
-        // cover the modifier-prefixed forms; this override adds the plain-key UX
-        // for when GraphView is firstResponder.
+        // the menu shortcut uses (Cmd+Return). Esc clears focus. Arrow keys walk
+        // the DAG topologically. Menu key equivalents cover the modifier-prefixed
+        // forms; this override adds the plain-key UX for when GraphView is
+        // firstResponder.
         switch event.specialKey {
+        case .upArrow:
+            navigateSelection(.up)
+        case .downArrow:
+            navigateSelection(.down)
+        case .leftArrow:
+            navigateSelection(.left)
+        case .rightArrow:
+            navigateSelection(.right)
         case .carriageReturn, .enter:
             if selection.primary != nil {
                 NSApp.sendAction(#selector(LineageActions.focusOnSelection(_:)), to: nil, from: self)
@@ -226,6 +246,58 @@ final class GraphView: NSView, NSMenuItemValidation {
                 super.keyDown(with: event)
             }
         }
+    }
+
+    private func navigateSelection(_ direction: DAGNavigation.Direction) {
+        guard hasContent, let graph = currentGraph, let layout = currentLayout else { return }
+        let next: NodeID?
+        if let current = selection.primary, graph.nodes[current] != nil {
+            next = DAGNavigation.neighbor(
+                of: current,
+                direction: direction,
+                graph: graph,
+                layout: layout,
+                visible: visibleNodes
+            )
+        } else {
+            let center = viewport.contentPoint(fromView: CGPoint(x: bounds.midX, y: bounds.midY))
+            next = DAGNavigation.nearest(
+                to: center,
+                graph: graph,
+                layout: layout,
+                visible: visibleNodes
+            )
+        }
+        guard let next else { return }
+        selection.replace(with: next)
+        revealInViewport(nodeID: next, layout: layout)
+    }
+
+    private func revealInViewport(nodeID: NodeID, layout: GraphLayout, animationDuration: CFTimeInterval = 0.18) {
+        guard let contentRect = layout.rect(for: nodeID) else { return }
+        let viewRect = contentRect.applying(viewport.transform)
+        let margin: CGFloat = 60
+        let allowed = bounds.insetBy(dx: margin, dy: margin)
+        guard allowed.width > 0, allowed.height > 0 else { return }
+        if allowed.contains(viewRect) { return }
+
+        var dx: CGFloat = 0
+        var dy: CGFloat = 0
+        if viewRect.minX < allowed.minX {
+            dx = allowed.minX - viewRect.minX
+        } else if viewRect.maxX > allowed.maxX {
+            dx = allowed.maxX - viewRect.maxX
+        }
+        if viewRect.minY < allowed.minY {
+            dy = allowed.minY - viewRect.minY
+        } else if viewRect.maxY > allowed.maxY {
+            dy = allowed.maxY - viewRect.maxY
+        }
+        if dx == 0, dy == 0 { return }
+
+        viewport.translation.x += dx
+        viewport.translation.y += dy
+        applyViewport(animationDuration: animationDuration)
     }
 
     override func mouseDragged(with event: NSEvent) {
