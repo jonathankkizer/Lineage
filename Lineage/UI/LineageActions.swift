@@ -40,4 +40,7 @@ import AppKit
     func openReleasesPage(_ sender: Any?)
     func checkForUpdates(_ sender: Any?)
     func toggleAutomaticUpdateChecks(_ sender: Any?)
+
+    // Audio
+    func toggleNavigationBeep(_ sender: Any?)
 }

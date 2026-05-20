@@ -117,6 +117,7 @@ enum AppMenu {
         menu.addItem(toggleInspector)
 
         menu.addItem(withTitle: "Hide Edges", action: #selector(LineageActions.toggleShowAllEdges(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: "Navigation Beep", action: #selector(LineageActions.toggleNavigationBeep(_:)), keyEquivalent: "")
         menu.addItem(.separator())
 
         let showItem = NSMenuItem(title: "Show", action: nil, keyEquivalent: "")
