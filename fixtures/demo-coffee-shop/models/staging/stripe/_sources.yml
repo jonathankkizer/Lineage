@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: stripe
+    database: beanstalk
+    schema: raw_stripe
+    description: Stripe billing platform, replicated via Fivetran.
+    tables:
+      - name: charges

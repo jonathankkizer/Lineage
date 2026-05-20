@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: shop_db
+    database: beanstalk
+    schema: raw_ecommerce
+    description: |
+      Storefront operational database, replicated to the warehouse nightly.
+    tables:
+      - name: customers
+      - name: orders
+      - name: order_items
+      - name: products
+      - name: subscriptions
+      - name: inventory_snapshots

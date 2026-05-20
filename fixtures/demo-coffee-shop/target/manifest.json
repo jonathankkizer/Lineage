@@ -1,0 +1,5420 @@
+{
+  "metadata": {
+    "dbt_schema_version": "https://schemas.getdbt.com/dbt/manifest/v12.json",
+    "dbt_version": "1.10.4",
+    "generated_at": "2026-05-19T13:00:00.000000Z",
+    "invocation_id": "f7b1f8c4-1c41-4d2d-8a3a-5f7c2c6c2b00",
+    "env": {},
+    "project_name": "beanstalk_coffee",
+    "project_id": "00000000-0000-4000-8000-000000000001",
+    "user_id": null,
+    "send_anonymous_usage_stats": false,
+    "adapter_type": "duckdb"
+  },
+  "nodes": {
+    "seed.beanstalk_coffee.country_codes": {
+      "database": "beanstalk",
+      "schema": "seeds",
+      "name": "country_codes",
+      "resource_type": "seed",
+      "package_name": "beanstalk_coffee",
+      "path": "country_codes.csv",
+      "original_file_path": "seeds/country_codes.csv",
+      "unique_id": "seed.beanstalk_coffee.country_codes",
+      "fqn": [
+        "beanstalk_coffee",
+        "seeds",
+        "country_codes"
+      ],
+      "alias": "country_codes",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "reference"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "seed",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "reference"
+      ],
+      "description": "ISO 3166-1 country codes mapped to region and continent for geo rollups.",
+      "columns": {
+        "country_code": {
+          "name": "country_code",
+          "description": "ISO 3166-1 alpha-2 code.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "country_name": {
+          "name": "country_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "region": {
+          "name": "region",
+          "description": "UN geoscheme region.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "continent": {
+          "name": "continent",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {},
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"seeds\".\"country_codes\"",
+      "depends_on": {
+        "macros": [],
+        "nodes": []
+      },
+      "root_path": "",
+      "raw_code": ""
+    },
+    "seed.beanstalk_coffee.product_categories": {
+      "database": "beanstalk",
+      "schema": "seeds",
+      "name": "product_categories",
+      "resource_type": "seed",
+      "package_name": "beanstalk_coffee",
+      "path": "product_categories.csv",
+      "original_file_path": "seeds/product_categories.csv",
+      "unique_id": "seed.beanstalk_coffee.product_categories",
+      "fqn": [
+        "beanstalk_coffee",
+        "seeds",
+        "product_categories"
+      ],
+      "alias": "product_categories",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "reference"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "seed",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "reference"
+      ],
+      "description": "Category hierarchy lookup keyed by category_key (e.g. coffee/single-origin/ethiopia).",
+      "columns": {
+        "category_key": {
+          "name": "category_key",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "category_name": {
+          "name": "category_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "parent_category": {
+          "name": "parent_category",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {},
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"seeds\".\"product_categories\"",
+      "depends_on": {
+        "macros": [],
+        "nodes": []
+      },
+      "root_path": "",
+      "raw_code": ""
+    },
+    "model.beanstalk_coffee.stg_shop__customers": {
+      "database": "beanstalk",
+      "schema": "shop",
+      "name": "stg_shop__customers",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "staging/shop/stg_shop__customers.sql",
+      "original_file_path": "models/staging/shop/stg_shop__customers.sql",
+      "unique_id": "model.beanstalk_coffee.stg_shop__customers",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop",
+        "stg_shop__customers"
+      ],
+      "alias": "stg_shop__customers",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "pii",
+          "staging"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "view",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "pii",
+        "staging"
+      ],
+      "description": "Cleaned customer records: lowercased emails, parsed names, deduped on customer_id.",
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Surrogate primary key for the customer.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "email": {
+          "name": "email",
+          "description": "Lowercased customer email address.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_name": {
+          "name": "first_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "last_name": {
+          "name": "last_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "country_code": {
+          "name": "country_code",
+          "description": "ISO 3166-1 alpha-2 country code from shipping address.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "signup_date": {
+          "name": "signup_date",
+          "description": "Date the customer created their account.",
+          "meta": {},
+          "data_type": "date",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "view"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"shop\".\"stg_shop__customers\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.beanstalk_coffee.shop_db.customers"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.stg_shop__orders": {
+      "database": "beanstalk",
+      "schema": "shop",
+      "name": "stg_shop__orders",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "staging/shop/stg_shop__orders.sql",
+      "original_file_path": "models/staging/shop/stg_shop__orders.sql",
+      "unique_id": "model.beanstalk_coffee.stg_shop__orders",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop",
+        "stg_shop__orders"
+      ],
+      "alias": "stg_shop__orders",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "staging"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "view",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "staging"
+      ],
+      "description": "Storefront orders with status normalized and order totals cast to numeric.",
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "description": "Surrogate primary key for the order.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "FK to customers.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "ordered_at": {
+          "name": "ordered_at",
+          "description": "Timestamp the customer placed the order.",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "status": {
+          "name": "status",
+          "description": "One of: placed, paid, fulfilled, refunded, cancelled.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_total_usd": {
+          "name": "order_total_usd",
+          "description": "Order grand total in USD, incl. tax + shipping.",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "subtotal_usd": {
+          "name": "subtotal_usd",
+          "description": "Order subtotal in USD, excl. tax + shipping.",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "view"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"shop\".\"stg_shop__orders\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.beanstalk_coffee.shop_db.orders"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.stg_shop__order_items": {
+      "database": "beanstalk",
+      "schema": "shop",
+      "name": "stg_shop__order_items",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "staging/shop/stg_shop__order_items.sql",
+      "original_file_path": "models/staging/shop/stg_shop__order_items.sql",
+      "unique_id": "model.beanstalk_coffee.stg_shop__order_items",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop",
+        "stg_shop__order_items"
+      ],
+      "alias": "stg_shop__order_items",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "staging"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "view",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "staging"
+      ],
+      "description": "Order line items with line totals recomputed for consistency.",
+      "columns": {
+        "order_item_id": {
+          "name": "order_item_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_id": {
+          "name": "order_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "quantity": {
+          "name": "quantity",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "unit_price_usd": {
+          "name": "unit_price_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(10,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "line_total_usd": {
+          "name": "line_total_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "view"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"shop\".\"stg_shop__order_items\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.beanstalk_coffee.shop_db.order_items"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.stg_shop__products": {
+      "database": "beanstalk",
+      "schema": "shop",
+      "name": "stg_shop__products",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "staging/shop/stg_shop__products.sql",
+      "original_file_path": "models/staging/shop/stg_shop__products.sql",
+      "unique_id": "model.beanstalk_coffee.stg_shop__products",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop",
+        "stg_shop__products"
+      ],
+      "alias": "stg_shop__products",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "staging"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "view",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "staging"
+      ],
+      "description": "Active product catalog with category_key normalized for joining to product_categories.",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sku": {
+          "name": "sku",
+          "description": "Stock-keeping unit code, e.g. ETH-12OZ-WHOLE.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_name": {
+          "name": "product_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "category_key": {
+          "name": "category_key",
+          "description": "Joins to product_categories.category_key.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "unit_price_usd": {
+          "name": "unit_price_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(10,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "is_subscription_eligible": {
+          "name": "is_subscription_eligible",
+          "description": "",
+          "meta": {},
+          "data_type": "boolean",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "view"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"shop\".\"stg_shop__products\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.beanstalk_coffee.shop_db.products"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.stg_shop__subscriptions": {
+      "database": "beanstalk",
+      "schema": "shop",
+      "name": "stg_shop__subscriptions",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "staging/shop/stg_shop__subscriptions.sql",
+      "original_file_path": "models/staging/shop/stg_shop__subscriptions.sql",
+      "unique_id": "model.beanstalk_coffee.stg_shop__subscriptions",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop",
+        "stg_shop__subscriptions"
+      ],
+      "alias": "stg_shop__subscriptions",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "staging",
+          "subscription"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "view",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "staging",
+        "subscription"
+      ],
+      "description": "Subscription records with cadence parsed and statuses normalized.",
+      "columns": {
+        "subscription_id": {
+          "name": "subscription_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "status": {
+          "name": "status",
+          "description": "active, paused, churned, reactivated",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "cadence": {
+          "name": "cadence",
+          "description": "weekly, biweekly, monthly",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "started_at": {
+          "name": "started_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "description": "Null while active.",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "view"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"shop\".\"stg_shop__subscriptions\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.beanstalk_coffee.shop_db.subscriptions"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.stg_shop__inventory_snapshots": {
+      "database": "beanstalk",
+      "schema": "shop",
+      "name": "stg_shop__inventory_snapshots",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "staging/shop/stg_shop__inventory_snapshots.sql",
+      "original_file_path": "models/staging/shop/stg_shop__inventory_snapshots.sql",
+      "unique_id": "model.beanstalk_coffee.stg_shop__inventory_snapshots",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop",
+        "stg_shop__inventory_snapshots"
+      ],
+      "alias": "stg_shop__inventory_snapshots",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "staging",
+          "ops"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "view",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "staging",
+        "ops"
+      ],
+      "description": "Daily inventory snapshots, deduped per (snapshot_date, sku).",
+      "columns": {
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "snapshot_date": {
+          "name": "snapshot_date",
+          "description": "",
+          "meta": {},
+          "data_type": "date",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sku": {
+          "name": "sku",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "on_hand_units": {
+          "name": "on_hand_units",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "reorder_threshold": {
+          "name": "reorder_threshold",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "view"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"shop\".\"stg_shop__inventory_snapshots\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.beanstalk_coffee.shop_db.inventory_snapshots"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.stg_stripe__charges": {
+      "database": "beanstalk",
+      "schema": "stripe",
+      "name": "stg_stripe__charges",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "staging/stripe/stg_stripe__charges.sql",
+      "original_file_path": "models/staging/stripe/stg_stripe__charges.sql",
+      "unique_id": "model.beanstalk_coffee.stg_stripe__charges",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "stripe",
+        "stg_stripe__charges"
+      ],
+      "alias": "stg_stripe__charges",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "staging",
+          "finance"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "view",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "staging",
+        "finance"
+      ],
+      "description": "Stripe charges with amounts converted from cents to USD numeric.",
+      "columns": {
+        "charge_id": {
+          "name": "charge_id",
+          "description": "Stripe charge ID, e.g. ch_3OabcDEF...",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_id": {
+          "name": "order_id",
+          "description": "Linked back to shop orders via metadata.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "amount_usd": {
+          "name": "amount_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "currency": {
+          "name": "currency",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "status": {
+          "name": "status",
+          "description": "succeeded, failed, refunded",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "charged_at": {
+          "name": "charged_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "payment_method_type": {
+          "name": "payment_method_type",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "view"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"stripe\".\"stg_stripe__charges\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.beanstalk_coffee.stripe.charges"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.stg_segment__web_events": {
+      "database": "beanstalk",
+      "schema": "segment",
+      "name": "stg_segment__web_events",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "staging/segment/stg_segment__web_events.sql",
+      "original_file_path": "models/staging/segment/stg_segment__web_events.sql",
+      "unique_id": "model.beanstalk_coffee.stg_segment__web_events",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "segment",
+        "stg_segment__web_events"
+      ],
+      "alias": "stg_segment__web_events",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "staging",
+          "marketing"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "view",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "staging",
+        "marketing"
+      ],
+      "description": "Segment clickstream events with bot traffic filtered out.",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "anonymous_id": {
+          "name": "anonymous_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "event_name": {
+          "name": "event_name",
+          "description": "page_view, add_to_cart, checkout_start, purchase, etc.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "page_path": {
+          "name": "page_path",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "utm_source": {
+          "name": "utm_source",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "utm_medium": {
+          "name": "utm_medium",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "utm_campaign": {
+          "name": "utm_campaign",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "view"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"segment\".\"stg_segment__web_events\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.beanstalk_coffee.segment.web_events"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.int_orders__line_items_joined": {
+      "database": "beanstalk",
+      "schema": "intermediate",
+      "name": "int_orders__line_items_joined",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "intermediate/int_orders__line_items_joined.sql",
+      "original_file_path": "models/intermediate/int_orders__line_items_joined.sql",
+      "unique_id": "model.beanstalk_coffee.int_orders__line_items_joined",
+      "fqn": [
+        "beanstalk_coffee",
+        "intermediate",
+        "int_orders__line_items_joined"
+      ],
+      "alias": "int_orders__line_items_joined",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "intermediate"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "ephemeral",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "description": "Orders joined with their line items and product metadata. One row per order_item, denormalized.",
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_item_id": {
+          "name": "order_item_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sku": {
+          "name": "sku",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "category_key": {
+          "name": "category_key",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "quantity": {
+          "name": "quantity",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "unit_price_usd": {
+          "name": "unit_price_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(10,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "line_total_usd": {
+          "name": "line_total_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "ordered_at": {
+          "name": "ordered_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "ephemeral"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"intermediate\".\"int_orders__line_items_joined\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__orders",
+          "model.beanstalk_coffee.stg_shop__order_items",
+          "model.beanstalk_coffee.stg_shop__products"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.int_subscriptions__active_periods": {
+      "database": "beanstalk",
+      "schema": "intermediate",
+      "name": "int_subscriptions__active_periods",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "intermediate/int_subscriptions__active_periods.sql",
+      "original_file_path": "models/intermediate/int_subscriptions__active_periods.sql",
+      "unique_id": "model.beanstalk_coffee.int_subscriptions__active_periods",
+      "fqn": [
+        "beanstalk_coffee",
+        "intermediate",
+        "int_subscriptions__active_periods"
+      ],
+      "alias": "int_subscriptions__active_periods",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "intermediate",
+          "subscription"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "ephemeral",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "intermediate",
+        "subscription"
+      ],
+      "description": "Subscription lifecycles flattened into [started_at, ended_at) active windows for time-bound aggregations.",
+      "columns": {
+        "subscription_id": {
+          "name": "subscription_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "active_from": {
+          "name": "active_from",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "active_to": {
+          "name": "active_to",
+          "description": "Exclusive upper bound; null while active.",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "cadence": {
+          "name": "cadence",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "ephemeral"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"intermediate\".\"int_subscriptions__active_periods\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__subscriptions"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.int_web_sessions__sessionized": {
+      "database": "beanstalk",
+      "schema": "intermediate",
+      "name": "int_web_sessions__sessionized",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "intermediate/int_web_sessions__sessionized.sql",
+      "original_file_path": "models/intermediate/int_web_sessions__sessionized.sql",
+      "unique_id": "model.beanstalk_coffee.int_web_sessions__sessionized",
+      "fqn": [
+        "beanstalk_coffee",
+        "intermediate",
+        "int_web_sessions__sessionized"
+      ],
+      "alias": "int_web_sessions__sessionized",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "intermediate",
+          "marketing"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "ephemeral",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "intermediate",
+        "marketing"
+      ],
+      "description": "Web events grouped into sessions (30-minute inactivity gap) with first-touch UTM attribution.",
+      "columns": {
+        "session_id": {
+          "name": "session_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "anonymous_id": {
+          "name": "anonymous_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "session_started_at": {
+          "name": "session_started_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "session_ended_at": {
+          "name": "session_ended_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "event_count": {
+          "name": "event_count",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_touch_utm_source": {
+          "name": "first_touch_utm_source",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_touch_utm_campaign": {
+          "name": "first_touch_utm_campaign",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "converted": {
+          "name": "converted",
+          "description": "Whether the session contained a purchase event.",
+          "meta": {},
+          "data_type": "boolean",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "ephemeral"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"intermediate\".\"int_web_sessions__sessionized\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_segment__web_events"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.int_customers__order_summary": {
+      "database": "beanstalk",
+      "schema": "intermediate",
+      "name": "int_customers__order_summary",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "intermediate/int_customers__order_summary.sql",
+      "original_file_path": "models/intermediate/int_customers__order_summary.sql",
+      "unique_id": "model.beanstalk_coffee.int_customers__order_summary",
+      "fqn": [
+        "beanstalk_coffee",
+        "intermediate",
+        "int_customers__order_summary"
+      ],
+      "alias": "int_customers__order_summary",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "intermediate",
+          "pii"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "ephemeral",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "intermediate",
+        "pii"
+      ],
+      "description": "One row per customer with first/last order date, total orders, and lifetime gross revenue.",
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_order_at": {
+          "name": "first_order_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "most_recent_order_at": {
+          "name": "most_recent_order_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "lifetime_orders": {
+          "name": "lifetime_orders",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "lifetime_gross_revenue_usd": {
+          "name": "lifetime_gross_revenue_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "ephemeral"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"intermediate\".\"int_customers__order_summary\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__customers",
+          "model.beanstalk_coffee.stg_shop__orders"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.dim_customers": {
+      "database": "beanstalk",
+      "schema": "core",
+      "name": "dim_customers",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/core/dim_customers.sql",
+      "original_file_path": "models/marts/core/dim_customers.sql",
+      "unique_id": "model.beanstalk_coffee.dim_customers",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "core",
+        "dim_customers"
+      ],
+      "alias": "dim_customers",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "core",
+          "pii"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "core",
+        "pii"
+      ],
+      "description": "Customer dimension with lifetime aggregates and geographic enrichment from country_codes.",
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Primary key.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "email": {
+          "name": "email",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_name": {
+          "name": "first_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "last_name": {
+          "name": "last_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "country_code": {
+          "name": "country_code",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "country_name": {
+          "name": "country_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "region": {
+          "name": "region",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "continent": {
+          "name": "continent",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "signup_date": {
+          "name": "signup_date",
+          "description": "",
+          "meta": {},
+          "data_type": "date",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_order_at": {
+          "name": "first_order_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "lifetime_orders": {
+          "name": "lifetime_orders",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "lifetime_gross_revenue_usd": {
+          "name": "lifetime_gross_revenue_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"core\".\"dim_customers\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__customers",
+          "model.beanstalk_coffee.int_customers__order_summary",
+          "seed.beanstalk_coffee.country_codes"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.dim_products": {
+      "database": "beanstalk",
+      "schema": "core",
+      "name": "dim_products",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/core/dim_products.sql",
+      "original_file_path": "models/marts/core/dim_products.sql",
+      "unique_id": "model.beanstalk_coffee.dim_products",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "core",
+        "dim_products"
+      ],
+      "alias": "dim_products",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "core"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "core"
+      ],
+      "description": "Product dimension joined to the category hierarchy.",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sku": {
+          "name": "sku",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_name": {
+          "name": "product_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "category_key": {
+          "name": "category_key",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "category_name": {
+          "name": "category_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "parent_category": {
+          "name": "parent_category",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "unit_price_usd": {
+          "name": "unit_price_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(10,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "is_subscription_eligible": {
+          "name": "is_subscription_eligible",
+          "description": "",
+          "meta": {},
+          "data_type": "boolean",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"core\".\"dim_products\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__products",
+          "seed.beanstalk_coffee.product_categories"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.dim_subscriptions": {
+      "database": "beanstalk",
+      "schema": "core",
+      "name": "dim_subscriptions",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/core/dim_subscriptions.sql",
+      "original_file_path": "models/marts/core/dim_subscriptions.sql",
+      "unique_id": "model.beanstalk_coffee.dim_subscriptions",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "core",
+        "dim_subscriptions"
+      ],
+      "alias": "dim_subscriptions",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "core",
+          "subscription"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "core",
+        "subscription"
+      ],
+      "description": "Subscription dimension with one row per subscription, including its active windows.",
+      "columns": {
+        "subscription_id": {
+          "name": "subscription_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "current_status": {
+          "name": "current_status",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "cadence": {
+          "name": "cadence",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_active_at": {
+          "name": "first_active_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "last_active_at": {
+          "name": "last_active_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"core\".\"dim_subscriptions\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__subscriptions",
+          "model.beanstalk_coffee.int_subscriptions__active_periods"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.fct_orders": {
+      "database": "beanstalk",
+      "schema": "finance",
+      "name": "fct_orders",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/finance/fct_orders.sql",
+      "original_file_path": "models/marts/finance/fct_orders.sql",
+      "unique_id": "model.beanstalk_coffee.fct_orders",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "finance",
+        "fct_orders"
+      ],
+      "alias": "fct_orders",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "finance"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "finance"
+      ],
+      "description": "One row per order with customer attribution and revenue split out.",
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "ordered_at": {
+          "name": "ordered_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "status": {
+          "name": "status",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "item_count": {
+          "name": "item_count",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "subtotal_usd": {
+          "name": "subtotal_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_total_usd": {
+          "name": "order_total_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"finance\".\"fct_orders\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__orders",
+          "model.beanstalk_coffee.int_orders__line_items_joined",
+          "model.beanstalk_coffee.dim_customers"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.fct_order_items": {
+      "database": "beanstalk",
+      "schema": "finance",
+      "name": "fct_order_items",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/finance/fct_order_items.sql",
+      "original_file_path": "models/marts/finance/fct_order_items.sql",
+      "unique_id": "model.beanstalk_coffee.fct_order_items",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "finance",
+        "fct_order_items"
+      ],
+      "alias": "fct_order_items",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "finance"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "finance"
+      ],
+      "description": "One row per line item, with product and category attribution for revenue-by-SKU analysis.",
+      "columns": {
+        "order_item_id": {
+          "name": "order_item_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_id": {
+          "name": "order_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sku": {
+          "name": "sku",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "category_key": {
+          "name": "category_key",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "quantity": {
+          "name": "quantity",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "unit_price_usd": {
+          "name": "unit_price_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(10,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "line_total_usd": {
+          "name": "line_total_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "ordered_at": {
+          "name": "ordered_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"finance\".\"fct_order_items\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.int_orders__line_items_joined",
+          "model.beanstalk_coffee.dim_products"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.fct_payments": {
+      "database": "beanstalk",
+      "schema": "finance",
+      "name": "fct_payments",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/finance/fct_payments.sql",
+      "original_file_path": "models/marts/finance/fct_payments.sql",
+      "unique_id": "model.beanstalk_coffee.fct_payments",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "finance",
+        "fct_payments"
+      ],
+      "alias": "fct_payments",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "finance"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "finance"
+      ],
+      "description": "Stripe charges joined to shop orders, with failed and refunded charges retained for reconciliation.",
+      "columns": {
+        "charge_id": {
+          "name": "charge_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_id": {
+          "name": "order_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "amount_usd": {
+          "name": "amount_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "status": {
+          "name": "status",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "payment_method_type": {
+          "name": "payment_method_type",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "charged_at": {
+          "name": "charged_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"finance\".\"fct_payments\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_stripe__charges",
+          "model.beanstalk_coffee.fct_orders"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.fct_web_sessions": {
+      "database": "beanstalk",
+      "schema": "marketing",
+      "name": "fct_web_sessions",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/marketing/fct_web_sessions.sql",
+      "original_file_path": "models/marts/marketing/fct_web_sessions.sql",
+      "unique_id": "model.beanstalk_coffee.fct_web_sessions",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "marketing",
+        "fct_web_sessions"
+      ],
+      "alias": "fct_web_sessions",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "marketing"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "marketing"
+      ],
+      "description": "One row per web session with first-touch attribution and customer linkage where identified.",
+      "columns": {
+        "session_id": {
+          "name": "session_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "anonymous_id": {
+          "name": "anonymous_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Nullable when the session was anonymous.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "session_started_at": {
+          "name": "session_started_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "session_ended_at": {
+          "name": "session_ended_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "event_count": {
+          "name": "event_count",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_touch_utm_source": {
+          "name": "first_touch_utm_source",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_touch_utm_campaign": {
+          "name": "first_touch_utm_campaign",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "converted": {
+          "name": "converted",
+          "description": "",
+          "meta": {},
+          "data_type": "boolean",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"marketing\".\"fct_web_sessions\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.int_web_sessions__sessionized",
+          "model.beanstalk_coffee.dim_customers"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.fct_subscription_events": {
+      "database": "beanstalk",
+      "schema": "subscription",
+      "name": "fct_subscription_events",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/subscription/fct_subscription_events.sql",
+      "original_file_path": "models/marts/subscription/fct_subscription_events.sql",
+      "unique_id": "model.beanstalk_coffee.fct_subscription_events",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "subscription",
+        "fct_subscription_events"
+      ],
+      "alias": "fct_subscription_events",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "subscription"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "subscription"
+      ],
+      "description": "Transitions on the subscription lifecycle (start, pause, churn, reactivate) with elapsed days since prior event.",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "event_type": {
+          "name": "event_type",
+          "description": "started, paused, churned, reactivated.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "days_since_previous_event": {
+          "name": "days_since_previous_event",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"subscription\".\"fct_subscription_events\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__subscriptions",
+          "model.beanstalk_coffee.int_subscriptions__active_periods",
+          "model.beanstalk_coffee.dim_customers",
+          "model.beanstalk_coffee.dim_subscriptions"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.mart_daily_revenue": {
+      "database": "beanstalk",
+      "schema": "analytics",
+      "name": "mart_daily_revenue",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/analytics/mart_daily_revenue.sql",
+      "original_file_path": "models/marts/analytics/mart_daily_revenue.sql",
+      "unique_id": "model.beanstalk_coffee.mart_daily_revenue",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "analytics",
+        "mart_daily_revenue"
+      ],
+      "alias": "mart_daily_revenue",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "finance",
+          "daily"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "finance",
+        "daily"
+      ],
+      "description": "Daily gross/net revenue rollup combining order revenue with refunds applied from payments.",
+      "columns": {
+        "revenue_date": {
+          "name": "revenue_date",
+          "description": "",
+          "meta": {},
+          "data_type": "date",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "orders_placed": {
+          "name": "orders_placed",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "gross_revenue_usd": {
+          "name": "gross_revenue_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "refunds_usd": {
+          "name": "refunds_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "net_revenue_usd": {
+          "name": "net_revenue_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"analytics\".\"mart_daily_revenue\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.fct_orders",
+          "model.beanstalk_coffee.fct_payments"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.mart_customer_lifetime_value": {
+      "database": "beanstalk",
+      "schema": "analytics",
+      "name": "mart_customer_lifetime_value",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/analytics/mart_customer_lifetime_value.sql",
+      "original_file_path": "models/marts/analytics/mart_customer_lifetime_value.sql",
+      "unique_id": "model.beanstalk_coffee.mart_customer_lifetime_value",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "analytics",
+        "mart_customer_lifetime_value"
+      ],
+      "alias": "mart_customer_lifetime_value",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "pii",
+          "daily"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "pii",
+        "daily"
+      ],
+      "description": "Customer-level LTV combining one-time order revenue with subscription revenue projections.",
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "cohort_month": {
+          "name": "cohort_month",
+          "description": "",
+          "meta": {},
+          "data_type": "date",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "lifetime_orders": {
+          "name": "lifetime_orders",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "lifetime_revenue_usd": {
+          "name": "lifetime_revenue_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "projected_subscription_revenue_usd": {
+          "name": "projected_subscription_revenue_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "ltv_usd": {
+          "name": "ltv_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"analytics\".\"mart_customer_lifetime_value\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.dim_customers",
+          "model.beanstalk_coffee.fct_orders",
+          "model.beanstalk_coffee.fct_subscription_events"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.mart_product_performance": {
+      "database": "beanstalk",
+      "schema": "analytics",
+      "name": "mart_product_performance",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/analytics/mart_product_performance.sql",
+      "original_file_path": "models/marts/analytics/mart_product_performance.sql",
+      "unique_id": "model.beanstalk_coffee.mart_product_performance",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "analytics",
+        "mart_product_performance"
+      ],
+      "alias": "mart_product_performance",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "daily"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "daily"
+      ],
+      "description": "Product-level performance: units sold, revenue, reorder rate, and current inventory days-on-hand.",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sku": {
+          "name": "sku",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "units_sold_l30": {
+          "name": "units_sold_l30",
+          "description": "Units sold in trailing 30 days.",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "revenue_l30_usd": {
+          "name": "revenue_l30_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(14,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "reorder_rate": {
+          "name": "reorder_rate",
+          "description": "Share of customers who purchased this SKU more than once.",
+          "meta": {},
+          "data_type": "numeric(5,4)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"analytics\".\"mart_product_performance\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.dim_products",
+          "model.beanstalk_coffee.fct_order_items"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    },
+    "model.beanstalk_coffee.mart_acquisition_funnel": {
+      "database": "beanstalk",
+      "schema": "analytics",
+      "name": "mart_acquisition_funnel",
+      "resource_type": "model",
+      "package_name": "beanstalk_coffee",
+      "path": "marts/analytics/mart_acquisition_funnel.sql",
+      "original_file_path": "models/marts/analytics/mart_acquisition_funnel.sql",
+      "unique_id": "model.beanstalk_coffee.mart_acquisition_funnel",
+      "fqn": [
+        "beanstalk_coffee",
+        "marts",
+        "analytics",
+        "mart_acquisition_funnel"
+      ],
+      "alias": "mart_acquisition_funnel",
+      "checksum": {
+        "name": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "config": {
+        "enabled": true,
+        "alias": null,
+        "schema": null,
+        "database": null,
+        "tags": [
+          "marketing",
+          "daily"
+        ],
+        "meta": {},
+        "group": null,
+        "materialized": "table",
+        "persist_docs": {},
+        "post-hook": [],
+        "pre-hook": [],
+        "quoting": {},
+        "column_types": {},
+        "full_refresh": null,
+        "unique_key": null,
+        "on_schema_change": "ignore",
+        "grants": {},
+        "packages": [],
+        "docs": {
+          "show": true,
+          "node_color": null
+        },
+        "contract": {
+          "enforced": false,
+          "alias_types": true,
+          "checksum": null
+        },
+        "access": "protected"
+      },
+      "tags": [
+        "marketing",
+        "daily"
+      ],
+      "description": "Marketing funnel by acquisition channel: sessions \u2192 checkouts \u2192 first orders \u2192 repeat orders.",
+      "columns": {
+        "acquisition_channel": {
+          "name": "acquisition_channel",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sessions": {
+          "name": "sessions",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "checkouts_started": {
+          "name": "checkouts_started",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_orders": {
+          "name": "first_orders",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "repeat_orders_l90": {
+          "name": "repeat_orders_l90",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "conversion_rate": {
+          "name": "conversion_rate",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(5,4)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "group": null,
+      "docs": {
+        "show": true,
+        "node_color": null
+      },
+      "patch_path": null,
+      "build_path": null,
+      "deferred": false,
+      "unrendered_config": {
+        "materialized": "table"
+      },
+      "created_at": 1716130800.0,
+      "config_call_dict": {},
+      "relation_name": "\"beanstalk\".\"analytics\".\"mart_acquisition_funnel\"",
+      "raw_code": "",
+      "language": "sql",
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.fct_web_sessions",
+          "model.beanstalk_coffee.fct_orders"
+        ]
+      },
+      "compiled_path": null,
+      "compiled": false,
+      "compiled_code": null,
+      "extra_ctes_injected": false,
+      "extra_ctes": [],
+      "contract": {
+        "enforced": false,
+        "checksum": null
+      },
+      "access": "protected",
+      "constraints": [],
+      "version": null,
+      "latest_version": null,
+      "deprecation_date": null
+    }
+  },
+  "sources": {
+    "source.beanstalk_coffee.shop_db.customers": {
+      "database": "beanstalk",
+      "schema": "raw_ecommerce",
+      "name": "customers",
+      "resource_type": "source",
+      "package_name": "beanstalk_coffee",
+      "path": "models/staging/shop_db/_sources.yml",
+      "original_file_path": "models/staging/shop_db/_sources.yml",
+      "unique_id": "source.beanstalk_coffee.shop_db.customers",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop_db",
+        "shop_db",
+        "customers"
+      ],
+      "source_name": "shop_db",
+      "source_description": "shop_db source system.",
+      "loader": "",
+      "identifier": "customers",
+      "quoting": {
+        "database": false,
+        "schema": false,
+        "identifier": false,
+        "column": null
+      },
+      "loaded_at_field": null,
+      "freshness": {
+        "warn_after": {
+          "count": null,
+          "period": null
+        },
+        "error_after": {
+          "count": null,
+          "period": null
+        },
+        "filter": null
+      },
+      "external": null,
+      "description": "Customer records from the storefront database (one row per registered customer).",
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "description": "Surrogate primary key for the customer.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "email": {
+          "name": "email",
+          "description": "Lowercased customer email address.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "first_name": {
+          "name": "first_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "last_name": {
+          "name": "last_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "country_code": {
+          "name": "country_code",
+          "description": "ISO 3166-1 alpha-2 country code from shipping address.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "signup_date": {
+          "name": "signup_date",
+          "description": "Date the customer created their account.",
+          "meta": {},
+          "data_type": "date",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "source_meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true
+      },
+      "patch_path": null,
+      "unrendered_config": {},
+      "relation_name": "\"beanstalk\".\"raw_ecommerce\".\"customers\"",
+      "created_at": 1716130800.0
+    },
+    "source.beanstalk_coffee.shop_db.orders": {
+      "database": "beanstalk",
+      "schema": "raw_ecommerce",
+      "name": "orders",
+      "resource_type": "source",
+      "package_name": "beanstalk_coffee",
+      "path": "models/staging/shop_db/_sources.yml",
+      "original_file_path": "models/staging/shop_db/_sources.yml",
+      "unique_id": "source.beanstalk_coffee.shop_db.orders",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop_db",
+        "shop_db",
+        "orders"
+      ],
+      "source_name": "shop_db",
+      "source_description": "shop_db source system.",
+      "loader": "",
+      "identifier": "orders",
+      "quoting": {
+        "database": false,
+        "schema": false,
+        "identifier": false,
+        "column": null
+      },
+      "loaded_at_field": null,
+      "freshness": {
+        "warn_after": {
+          "count": null,
+          "period": null
+        },
+        "error_after": {
+          "count": null,
+          "period": null
+        },
+        "filter": null
+      },
+      "external": null,
+      "description": "One row per order placed through the storefront, in any status.",
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "description": "Surrogate primary key for the order.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "FK to customers.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "ordered_at": {
+          "name": "ordered_at",
+          "description": "Timestamp the customer placed the order.",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "status": {
+          "name": "status",
+          "description": "One of: placed, paid, fulfilled, refunded, cancelled.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_total_usd": {
+          "name": "order_total_usd",
+          "description": "Order grand total in USD, incl. tax + shipping.",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "subtotal_usd": {
+          "name": "subtotal_usd",
+          "description": "Order subtotal in USD, excl. tax + shipping.",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "source_meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true
+      },
+      "patch_path": null,
+      "unrendered_config": {},
+      "relation_name": "\"beanstalk\".\"raw_ecommerce\".\"orders\"",
+      "created_at": 1716130800.0
+    },
+    "source.beanstalk_coffee.shop_db.order_items": {
+      "database": "beanstalk",
+      "schema": "raw_ecommerce",
+      "name": "order_items",
+      "resource_type": "source",
+      "package_name": "beanstalk_coffee",
+      "path": "models/staging/shop_db/_sources.yml",
+      "original_file_path": "models/staging/shop_db/_sources.yml",
+      "unique_id": "source.beanstalk_coffee.shop_db.order_items",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop_db",
+        "shop_db",
+        "order_items"
+      ],
+      "source_name": "shop_db",
+      "source_description": "shop_db source system.",
+      "loader": "",
+      "identifier": "order_items",
+      "quoting": {
+        "database": false,
+        "schema": false,
+        "identifier": false,
+        "column": null
+      },
+      "loaded_at_field": null,
+      "freshness": {
+        "warn_after": {
+          "count": null,
+          "period": null
+        },
+        "error_after": {
+          "count": null,
+          "period": null
+        },
+        "filter": null
+      },
+      "external": null,
+      "description": "Line items within each order. Multiple rows per order.",
+      "columns": {
+        "order_item_id": {
+          "name": "order_item_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_id": {
+          "name": "order_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "quantity": {
+          "name": "quantity",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "unit_price_usd": {
+          "name": "unit_price_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(10,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "line_total_usd": {
+          "name": "line_total_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "source_meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true
+      },
+      "patch_path": null,
+      "unrendered_config": {},
+      "relation_name": "\"beanstalk\".\"raw_ecommerce\".\"order_items\"",
+      "created_at": 1716130800.0
+    },
+    "source.beanstalk_coffee.shop_db.products": {
+      "database": "beanstalk",
+      "schema": "raw_ecommerce",
+      "name": "products",
+      "resource_type": "source",
+      "package_name": "beanstalk_coffee",
+      "path": "models/staging/shop_db/_sources.yml",
+      "original_file_path": "models/staging/shop_db/_sources.yml",
+      "unique_id": "source.beanstalk_coffee.shop_db.products",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop_db",
+        "shop_db",
+        "products"
+      ],
+      "source_name": "shop_db",
+      "source_description": "shop_db source system.",
+      "loader": "",
+      "identifier": "products",
+      "quoting": {
+        "database": false,
+        "schema": false,
+        "identifier": false,
+        "column": null
+      },
+      "loaded_at_field": null,
+      "freshness": {
+        "warn_after": {
+          "count": null,
+          "period": null
+        },
+        "error_after": {
+          "count": null,
+          "period": null
+        },
+        "filter": null
+      },
+      "external": null,
+      "description": "Product catalog: coffees, espresso blends, brewing accessories, gift cards.",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sku": {
+          "name": "sku",
+          "description": "Stock-keeping unit code, e.g. ETH-12OZ-WHOLE.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_name": {
+          "name": "product_name",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "category_key": {
+          "name": "category_key",
+          "description": "Joins to product_categories.category_key.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "unit_price_usd": {
+          "name": "unit_price_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(10,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "is_subscription_eligible": {
+          "name": "is_subscription_eligible",
+          "description": "",
+          "meta": {},
+          "data_type": "boolean",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "source_meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true
+      },
+      "patch_path": null,
+      "unrendered_config": {},
+      "relation_name": "\"beanstalk\".\"raw_ecommerce\".\"products\"",
+      "created_at": 1716130800.0
+    },
+    "source.beanstalk_coffee.shop_db.subscriptions": {
+      "database": "beanstalk",
+      "schema": "raw_ecommerce",
+      "name": "subscriptions",
+      "resource_type": "source",
+      "package_name": "beanstalk_coffee",
+      "path": "models/staging/shop_db/_sources.yml",
+      "original_file_path": "models/staging/shop_db/_sources.yml",
+      "unique_id": "source.beanstalk_coffee.shop_db.subscriptions",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop_db",
+        "shop_db",
+        "subscriptions"
+      ],
+      "source_name": "shop_db",
+      "source_description": "shop_db source system.",
+      "loader": "",
+      "identifier": "subscriptions",
+      "quoting": {
+        "database": false,
+        "schema": false,
+        "identifier": false,
+        "column": null
+      },
+      "loaded_at_field": null,
+      "freshness": {
+        "warn_after": {
+          "count": null,
+          "period": null
+        },
+        "error_after": {
+          "count": null,
+          "period": null
+        },
+        "filter": null
+      },
+      "external": null,
+      "description": "Recurring coffee subscriptions. One row per subscription instance.",
+      "columns": {
+        "subscription_id": {
+          "name": "subscription_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "product_id": {
+          "name": "product_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "status": {
+          "name": "status",
+          "description": "active, paused, churned, reactivated",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "cadence": {
+          "name": "cadence",
+          "description": "weekly, biweekly, monthly",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "started_at": {
+          "name": "started_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "description": "Null while active.",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "source_meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true
+      },
+      "patch_path": null,
+      "unrendered_config": {},
+      "relation_name": "\"beanstalk\".\"raw_ecommerce\".\"subscriptions\"",
+      "created_at": 1716130800.0
+    },
+    "source.beanstalk_coffee.shop_db.inventory_snapshots": {
+      "database": "beanstalk",
+      "schema": "raw_ecommerce",
+      "name": "inventory_snapshots",
+      "resource_type": "source",
+      "package_name": "beanstalk_coffee",
+      "path": "models/staging/shop_db/_sources.yml",
+      "original_file_path": "models/staging/shop_db/_sources.yml",
+      "unique_id": "source.beanstalk_coffee.shop_db.inventory_snapshots",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "shop_db",
+        "shop_db",
+        "inventory_snapshots"
+      ],
+      "source_name": "shop_db",
+      "source_description": "shop_db source system.",
+      "loader": "",
+      "identifier": "inventory_snapshots",
+      "quoting": {
+        "database": false,
+        "schema": false,
+        "identifier": false,
+        "column": null
+      },
+      "loaded_at_field": null,
+      "freshness": {
+        "warn_after": {
+          "count": null,
+          "period": null
+        },
+        "error_after": {
+          "count": null,
+          "period": null
+        },
+        "filter": null
+      },
+      "external": null,
+      "description": "Daily inventory counts per SKU pulled from the warehouse system.",
+      "columns": {
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "description": "",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "snapshot_date": {
+          "name": "snapshot_date",
+          "description": "",
+          "meta": {},
+          "data_type": "date",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "sku": {
+          "name": "sku",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "on_hand_units": {
+          "name": "on_hand_units",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "reorder_threshold": {
+          "name": "reorder_threshold",
+          "description": "",
+          "meta": {},
+          "data_type": "integer",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "source_meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true
+      },
+      "patch_path": null,
+      "unrendered_config": {},
+      "relation_name": "\"beanstalk\".\"raw_ecommerce\".\"inventory_snapshots\"",
+      "created_at": 1716130800.0
+    },
+    "source.beanstalk_coffee.stripe.charges": {
+      "database": "beanstalk",
+      "schema": "raw_stripe",
+      "name": "charges",
+      "resource_type": "source",
+      "package_name": "beanstalk_coffee",
+      "path": "models/staging/stripe/_sources.yml",
+      "original_file_path": "models/staging/stripe/_sources.yml",
+      "unique_id": "source.beanstalk_coffee.stripe.charges",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "stripe",
+        "stripe",
+        "charges"
+      ],
+      "source_name": "stripe",
+      "source_description": "stripe source system.",
+      "loader": "",
+      "identifier": "charges",
+      "quoting": {
+        "database": false,
+        "schema": false,
+        "identifier": false,
+        "column": null
+      },
+      "loaded_at_field": null,
+      "freshness": {
+        "warn_after": {
+          "count": null,
+          "period": null
+        },
+        "error_after": {
+          "count": null,
+          "period": null
+        },
+        "filter": null
+      },
+      "external": null,
+      "description": "All Stripe charges, successful and failed, replicated via Fivetran.",
+      "columns": {
+        "charge_id": {
+          "name": "charge_id",
+          "description": "Stripe charge ID, e.g. ch_3OabcDEF...",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "order_id": {
+          "name": "order_id",
+          "description": "Linked back to shop orders via metadata.",
+          "meta": {},
+          "data_type": "bigint",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "amount_usd": {
+          "name": "amount_usd",
+          "description": "",
+          "meta": {},
+          "data_type": "numeric(12,2)",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "currency": {
+          "name": "currency",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "status": {
+          "name": "status",
+          "description": "succeeded, failed, refunded",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "charged_at": {
+          "name": "charged_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "payment_method_type": {
+          "name": "payment_method_type",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "source_meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true
+      },
+      "patch_path": null,
+      "unrendered_config": {},
+      "relation_name": "\"beanstalk\".\"raw_stripe\".\"charges\"",
+      "created_at": 1716130800.0
+    },
+    "source.beanstalk_coffee.segment.web_events": {
+      "database": "beanstalk",
+      "schema": "raw_segment",
+      "name": "web_events",
+      "resource_type": "source",
+      "package_name": "beanstalk_coffee",
+      "path": "models/staging/segment/_sources.yml",
+      "original_file_path": "models/staging/segment/_sources.yml",
+      "unique_id": "source.beanstalk_coffee.segment.web_events",
+      "fqn": [
+        "beanstalk_coffee",
+        "staging",
+        "segment",
+        "segment",
+        "web_events"
+      ],
+      "source_name": "segment",
+      "source_description": "segment source system.",
+      "loader": "",
+      "identifier": "web_events",
+      "quoting": {
+        "database": false,
+        "schema": false,
+        "identifier": false,
+        "column": null
+      },
+      "loaded_at_field": null,
+      "freshness": {
+        "warn_after": {
+          "count": null,
+          "period": null
+        },
+        "error_after": {
+          "count": null,
+          "period": null
+        },
+        "filter": null
+      },
+      "external": null,
+      "description": "Clickstream events from the marketing site and storefront, via Segment.",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "anonymous_id": {
+          "name": "anonymous_id",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "event_name": {
+          "name": "event_name",
+          "description": "page_view, add_to_cart, checkout_start, purchase, etc.",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "page_path": {
+          "name": "page_path",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "description": "",
+          "meta": {},
+          "data_type": "timestamp",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "utm_source": {
+          "name": "utm_source",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "utm_medium": {
+          "name": "utm_medium",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        },
+        "utm_campaign": {
+          "name": "utm_campaign",
+          "description": "",
+          "meta": {},
+          "data_type": "varchar",
+          "constraints": [],
+          "quote": null,
+          "tags": []
+        }
+      },
+      "meta": {},
+      "source_meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true
+      },
+      "patch_path": null,
+      "unrendered_config": {},
+      "relation_name": "\"beanstalk\".\"raw_segment\".\"web_events\"",
+      "created_at": 1716130800.0
+    }
+  },
+  "macros": {},
+  "docs": {},
+  "exposures": {
+    "exposure.beanstalk_coffee.executive_kpi_dashboard": {
+      "name": "executive_kpi_dashboard",
+      "resource_type": "exposure",
+      "package_name": "beanstalk_coffee",
+      "path": "_exposures.yml",
+      "original_file_path": "models/_exposures.yml",
+      "unique_id": "exposure.beanstalk_coffee.executive_kpi_dashboard",
+      "fqn": [
+        "beanstalk_coffee",
+        "executive_kpi_dashboard"
+      ],
+      "type": "dashboard",
+      "owner": {
+        "email": "analytics@beanstalkcoffee.example",
+        "name": "Analytics team"
+      },
+      "description": "Weekly executive review: revenue, LTV, and acquisition headline metrics.",
+      "label": null,
+      "maturity": "high",
+      "meta": {},
+      "tags": [],
+      "config": {
+        "enabled": true,
+        "tags": [],
+        "meta": {}
+      },
+      "unrendered_config": {},
+      "url": null,
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.mart_daily_revenue",
+          "model.beanstalk_coffee.mart_customer_lifetime_value",
+          "model.beanstalk_coffee.mart_acquisition_funnel"
+        ]
+      },
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "created_at": 1716130800.0
+    },
+    "exposure.beanstalk_coffee.marketing_attribution_sheet": {
+      "name": "marketing_attribution_sheet",
+      "resource_type": "exposure",
+      "package_name": "beanstalk_coffee",
+      "path": "_exposures.yml",
+      "original_file_path": "models/_exposures.yml",
+      "unique_id": "exposure.beanstalk_coffee.marketing_attribution_sheet",
+      "fqn": [
+        "beanstalk_coffee",
+        "marketing_attribution_sheet"
+      ],
+      "type": "analysis",
+      "owner": {
+        "email": "analytics@beanstalkcoffee.example",
+        "name": "Analytics team"
+      },
+      "description": "Channel attribution Google Sheet refreshed weekly by the marketing team.",
+      "label": null,
+      "maturity": "high",
+      "meta": {},
+      "tags": [
+        "marketing"
+      ],
+      "config": {
+        "enabled": true,
+        "tags": [
+          "marketing"
+        ],
+        "meta": {}
+      },
+      "unrendered_config": {},
+      "url": null,
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.mart_acquisition_funnel",
+          "model.beanstalk_coffee.fct_web_sessions"
+        ]
+      },
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "created_at": 1716130800.0
+    },
+    "exposure.beanstalk_coffee.ops_inventory_tracker": {
+      "name": "ops_inventory_tracker",
+      "resource_type": "exposure",
+      "package_name": "beanstalk_coffee",
+      "path": "_exposures.yml",
+      "original_file_path": "models/_exposures.yml",
+      "unique_id": "exposure.beanstalk_coffee.ops_inventory_tracker",
+      "fqn": [
+        "beanstalk_coffee",
+        "ops_inventory_tracker"
+      ],
+      "type": "application",
+      "owner": {
+        "email": "analytics@beanstalkcoffee.example",
+        "name": "Analytics team"
+      },
+      "description": "Operations app for the warehouse team to flag SKUs trending below reorder threshold.",
+      "label": null,
+      "maturity": "high",
+      "meta": {},
+      "tags": [
+        "ops"
+      ],
+      "config": {
+        "enabled": true,
+        "tags": [
+          "ops"
+        ],
+        "meta": {}
+      },
+      "unrendered_config": {},
+      "url": null,
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.beanstalk_coffee.stg_shop__inventory_snapshots",
+          "model.beanstalk_coffee.dim_products"
+        ]
+      },
+      "refs": [],
+      "sources": [],
+      "metrics": [],
+      "created_at": 1716130800.0
+    }
+  },
+  "metrics": {},
+  "groups": {},
+  "selectors": {},
+  "disabled": {},
+  "parent_map": {
+    "source.beanstalk_coffee.stripe.charges": [],
+    "model.beanstalk_coffee.mart_customer_lifetime_value": [
+      "model.beanstalk_coffee.dim_customers",
+      "model.beanstalk_coffee.fct_orders",
+      "model.beanstalk_coffee.fct_subscription_events"
+    ],
+    "model.beanstalk_coffee.dim_subscriptions": [
+      "model.beanstalk_coffee.stg_shop__subscriptions",
+      "model.beanstalk_coffee.int_subscriptions__active_periods"
+    ],
+    "model.beanstalk_coffee.stg_shop__products": [
+      "source.beanstalk_coffee.shop_db.products"
+    ],
+    "model.beanstalk_coffee.fct_payments": [
+      "model.beanstalk_coffee.stg_stripe__charges",
+      "model.beanstalk_coffee.fct_orders"
+    ],
+    "source.beanstalk_coffee.shop_db.order_items": [],
+    "model.beanstalk_coffee.dim_customers": [
+      "model.beanstalk_coffee.stg_shop__customers",
+      "model.beanstalk_coffee.int_customers__order_summary",
+      "seed.beanstalk_coffee.country_codes"
+    ],
+    "model.beanstalk_coffee.mart_product_performance": [
+      "model.beanstalk_coffee.dim_products",
+      "model.beanstalk_coffee.fct_order_items"
+    ],
+    "exposure.beanstalk_coffee.ops_inventory_tracker": [
+      "model.beanstalk_coffee.stg_shop__inventory_snapshots",
+      "model.beanstalk_coffee.dim_products"
+    ],
+    "model.beanstalk_coffee.int_orders__line_items_joined": [
+      "model.beanstalk_coffee.stg_shop__orders",
+      "model.beanstalk_coffee.stg_shop__order_items",
+      "model.beanstalk_coffee.stg_shop__products"
+    ],
+    "source.beanstalk_coffee.shop_db.products": [],
+    "model.beanstalk_coffee.stg_shop__subscriptions": [
+      "source.beanstalk_coffee.shop_db.subscriptions"
+    ],
+    "model.beanstalk_coffee.stg_shop__customers": [
+      "source.beanstalk_coffee.shop_db.customers"
+    ],
+    "model.beanstalk_coffee.fct_subscription_events": [
+      "model.beanstalk_coffee.stg_shop__subscriptions",
+      "model.beanstalk_coffee.int_subscriptions__active_periods",
+      "model.beanstalk_coffee.dim_customers",
+      "model.beanstalk_coffee.dim_subscriptions"
+    ],
+    "model.beanstalk_coffee.int_customers__order_summary": [
+      "model.beanstalk_coffee.stg_shop__customers",
+      "model.beanstalk_coffee.stg_shop__orders"
+    ],
+    "model.beanstalk_coffee.fct_web_sessions": [
+      "model.beanstalk_coffee.int_web_sessions__sessionized",
+      "model.beanstalk_coffee.dim_customers"
+    ],
+    "model.beanstalk_coffee.fct_orders": [
+      "model.beanstalk_coffee.stg_shop__orders",
+      "model.beanstalk_coffee.int_orders__line_items_joined",
+      "model.beanstalk_coffee.dim_customers"
+    ],
+    "source.beanstalk_coffee.shop_db.subscriptions": [],
+    "model.beanstalk_coffee.int_web_sessions__sessionized": [
+      "model.beanstalk_coffee.stg_segment__web_events"
+    ],
+    "exposure.beanstalk_coffee.executive_kpi_dashboard": [
+      "model.beanstalk_coffee.mart_daily_revenue",
+      "model.beanstalk_coffee.mart_customer_lifetime_value",
+      "model.beanstalk_coffee.mart_acquisition_funnel"
+    ],
+    "source.beanstalk_coffee.shop_db.inventory_snapshots": [],
+    "model.beanstalk_coffee.stg_segment__web_events": [
+      "source.beanstalk_coffee.segment.web_events"
+    ],
+    "source.beanstalk_coffee.segment.web_events": [],
+    "model.beanstalk_coffee.fct_order_items": [
+      "model.beanstalk_coffee.int_orders__line_items_joined",
+      "model.beanstalk_coffee.dim_products"
+    ],
+    "model.beanstalk_coffee.int_subscriptions__active_periods": [
+      "model.beanstalk_coffee.stg_shop__subscriptions"
+    ],
+    "model.beanstalk_coffee.stg_shop__orders": [
+      "source.beanstalk_coffee.shop_db.orders"
+    ],
+    "model.beanstalk_coffee.mart_acquisition_funnel": [
+      "model.beanstalk_coffee.fct_web_sessions",
+      "model.beanstalk_coffee.fct_orders"
+    ],
+    "exposure.beanstalk_coffee.marketing_attribution_sheet": [
+      "model.beanstalk_coffee.mart_acquisition_funnel",
+      "model.beanstalk_coffee.fct_web_sessions"
+    ],
+    "model.beanstalk_coffee.stg_shop__inventory_snapshots": [
+      "source.beanstalk_coffee.shop_db.inventory_snapshots"
+    ],
+    "model.beanstalk_coffee.stg_shop__order_items": [
+      "source.beanstalk_coffee.shop_db.order_items"
+    ],
+    "model.beanstalk_coffee.dim_products": [
+      "model.beanstalk_coffee.stg_shop__products",
+      "seed.beanstalk_coffee.product_categories"
+    ],
+    "seed.beanstalk_coffee.country_codes": [],
+    "source.beanstalk_coffee.shop_db.orders": [],
+    "source.beanstalk_coffee.shop_db.customers": [],
+    "model.beanstalk_coffee.stg_stripe__charges": [
+      "source.beanstalk_coffee.stripe.charges"
+    ],
+    "seed.beanstalk_coffee.product_categories": [],
+    "model.beanstalk_coffee.mart_daily_revenue": [
+      "model.beanstalk_coffee.fct_orders",
+      "model.beanstalk_coffee.fct_payments"
+    ]
+  },
+  "child_map": {
+    "source.beanstalk_coffee.stripe.charges": [
+      "model.beanstalk_coffee.stg_stripe__charges"
+    ],
+    "model.beanstalk_coffee.mart_customer_lifetime_value": [
+      "exposure.beanstalk_coffee.executive_kpi_dashboard"
+    ],
+    "model.beanstalk_coffee.dim_subscriptions": [
+      "model.beanstalk_coffee.fct_subscription_events"
+    ],
+    "model.beanstalk_coffee.stg_shop__products": [
+      "model.beanstalk_coffee.int_orders__line_items_joined",
+      "model.beanstalk_coffee.dim_products"
+    ],
+    "model.beanstalk_coffee.fct_payments": [
+      "model.beanstalk_coffee.mart_daily_revenue"
+    ],
+    "source.beanstalk_coffee.shop_db.order_items": [
+      "model.beanstalk_coffee.stg_shop__order_items"
+    ],
+    "model.beanstalk_coffee.dim_customers": [
+      "model.beanstalk_coffee.fct_orders",
+      "model.beanstalk_coffee.fct_web_sessions",
+      "model.beanstalk_coffee.fct_subscription_events",
+      "model.beanstalk_coffee.mart_customer_lifetime_value"
+    ],
+    "model.beanstalk_coffee.mart_product_performance": [],
+    "exposure.beanstalk_coffee.ops_inventory_tracker": [],
+    "model.beanstalk_coffee.int_orders__line_items_joined": [
+      "model.beanstalk_coffee.fct_orders",
+      "model.beanstalk_coffee.fct_order_items"
+    ],
+    "source.beanstalk_coffee.shop_db.products": [
+      "model.beanstalk_coffee.stg_shop__products"
+    ],
+    "model.beanstalk_coffee.stg_shop__subscriptions": [
+      "model.beanstalk_coffee.int_subscriptions__active_periods",
+      "model.beanstalk_coffee.dim_subscriptions",
+      "model.beanstalk_coffee.fct_subscription_events"
+    ],
+    "model.beanstalk_coffee.stg_shop__customers": [
+      "model.beanstalk_coffee.int_customers__order_summary",
+      "model.beanstalk_coffee.dim_customers"
+    ],
+    "model.beanstalk_coffee.fct_subscription_events": [
+      "model.beanstalk_coffee.mart_customer_lifetime_value"
+    ],
+    "model.beanstalk_coffee.int_customers__order_summary": [
+      "model.beanstalk_coffee.dim_customers"
+    ],
+    "model.beanstalk_coffee.fct_web_sessions": [
+      "model.beanstalk_coffee.mart_acquisition_funnel",
+      "exposure.beanstalk_coffee.marketing_attribution_sheet"
+    ],
+    "model.beanstalk_coffee.fct_orders": [
+      "model.beanstalk_coffee.fct_payments",
+      "model.beanstalk_coffee.mart_daily_revenue",
+      "model.beanstalk_coffee.mart_customer_lifetime_value",
+      "model.beanstalk_coffee.mart_acquisition_funnel"
+    ],
+    "source.beanstalk_coffee.shop_db.subscriptions": [
+      "model.beanstalk_coffee.stg_shop__subscriptions"
+    ],
+    "model.beanstalk_coffee.int_web_sessions__sessionized": [
+      "model.beanstalk_coffee.fct_web_sessions"
+    ],
+    "exposure.beanstalk_coffee.executive_kpi_dashboard": [],
+    "source.beanstalk_coffee.shop_db.inventory_snapshots": [
+      "model.beanstalk_coffee.stg_shop__inventory_snapshots"
+    ],
+    "model.beanstalk_coffee.stg_segment__web_events": [
+      "model.beanstalk_coffee.int_web_sessions__sessionized"
+    ],
+    "source.beanstalk_coffee.segment.web_events": [
+      "model.beanstalk_coffee.stg_segment__web_events"
+    ],
+    "model.beanstalk_coffee.fct_order_items": [
+      "model.beanstalk_coffee.mart_product_performance"
+    ],
+    "model.beanstalk_coffee.int_subscriptions__active_periods": [
+      "model.beanstalk_coffee.dim_subscriptions",
+      "model.beanstalk_coffee.fct_subscription_events"
+    ],
+    "model.beanstalk_coffee.stg_shop__orders": [
+      "model.beanstalk_coffee.int_orders__line_items_joined",
+      "model.beanstalk_coffee.int_customers__order_summary",
+      "model.beanstalk_coffee.fct_orders"
+    ],
+    "model.beanstalk_coffee.mart_acquisition_funnel": [
+      "exposure.beanstalk_coffee.executive_kpi_dashboard",
+      "exposure.beanstalk_coffee.marketing_attribution_sheet"
+    ],
+    "exposure.beanstalk_coffee.marketing_attribution_sheet": [],
+    "model.beanstalk_coffee.stg_shop__inventory_snapshots": [
+      "exposure.beanstalk_coffee.ops_inventory_tracker"
+    ],
+    "model.beanstalk_coffee.stg_shop__order_items": [
+      "model.beanstalk_coffee.int_orders__line_items_joined"
+    ],
+    "model.beanstalk_coffee.dim_products": [
+      "model.beanstalk_coffee.fct_order_items",
+      "model.beanstalk_coffee.mart_product_performance",
+      "exposure.beanstalk_coffee.ops_inventory_tracker"
+    ],
+    "seed.beanstalk_coffee.country_codes": [
+      "model.beanstalk_coffee.dim_customers"
+    ],
+    "source.beanstalk_coffee.shop_db.orders": [
+      "model.beanstalk_coffee.stg_shop__orders"
+    ],
+    "source.beanstalk_coffee.shop_db.customers": [
+      "model.beanstalk_coffee.stg_shop__customers"
+    ],
+    "model.beanstalk_coffee.stg_stripe__charges": [
+      "model.beanstalk_coffee.fct_payments"
+    ],
+    "seed.beanstalk_coffee.product_categories": [
+      "model.beanstalk_coffee.dim_products"
+    ],
+    "model.beanstalk_coffee.mart_daily_revenue": [
+      "exposure.beanstalk_coffee.executive_kpi_dashboard"
+    ]
+  },
+  "group_map": {},
+  "saved_queries": {},
+  "semantic_models": {},
+  "unit_tests": {}
+}
