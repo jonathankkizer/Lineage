@@ -11,10 +11,11 @@ enum AppMain {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     private var documentController: DbtDocumentController?
     private var welcomeWindowController: WelcomeWindowController?
+    private var updateCoordinator: UpdateCoordinator?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         documentController = DbtDocumentController()
@@ -25,6 +26,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
+        updateCoordinator = UpdateCoordinator()
+        updateCoordinator?.start()
+
         // State restoration runs asynchronously during launch; documents that
         // come back via restoration aren't necessarily present in
         // `NSDocumentController.shared.documents` by the time this method
@@ -34,6 +38,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if NSDocumentController.shared.documents.isEmpty {
                 showWelcomeIfAppropriate()
             }
+        }
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        switch menuItem.action {
+        case #selector(toggleAutomaticUpdateChecks(_:)):
+            menuItem.state = (updateCoordinator?.isAutoCheckEnabled ?? false) ? .on : .off
+            return updateCoordinator != nil
+        case #selector(checkForUpdates(_:)):
+            return updateCoordinator != nil
+        default:
+            return true
         }
     }
 
@@ -86,5 +102,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func openReleasesPage(_ sender: Any?) {
         guard let url = URL(string: "https://github.com/jonathankkizer/Lineage/releases") else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    @objc func checkForUpdates(_ sender: Any?) {
+        updateCoordinator?.checkManually()
+    }
+
+    @objc func toggleAutomaticUpdateChecks(_ sender: Any?) {
+        guard let coordinator = updateCoordinator else { return }
+        coordinator.setAutoCheckEnabled(!coordinator.isAutoCheckEnabled)
     }
 }
