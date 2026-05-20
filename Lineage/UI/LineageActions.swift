@@ -8,6 +8,8 @@ import AppKit
 @MainActor @objc protocol LineageActions {
     // Document
     func reloadProject(_ sender: Any?)
+    func openDemoProject(_ sender: Any?)
+    func showWelcomeWindow(_ sender: Any?)
 
     // View / zoom
     func zoomInGraph(_ sender: Any?)

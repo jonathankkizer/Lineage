@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: segment
+    database: beanstalk
+    schema: raw_segment
+    description: Segment clickstream events from the storefront and marketing site.
+    tables:
+      - name: web_events

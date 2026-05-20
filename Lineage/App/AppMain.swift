@@ -14,6 +14,7 @@ enum AppMain {
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var documentController: DbtDocumentController?
+    private var welcomeWindowController: WelcomeWindowController?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         documentController = DbtDocumentController()
@@ -27,11 +28,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // State restoration runs asynchronously during launch; documents that
         // come back via restoration aren't necessarily present in
         // `NSDocumentController.shared.documents` by the time this method
-        // fires. Wait a beat, then show the Open panel if still empty.
+        // fires. Wait a beat, then show the welcome window if still empty.
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(400))
             if NSDocumentController.shared.documents.isEmpty {
-                NSDocumentController.shared.openDocument(nil)
+                showWelcomeIfAppropriate()
             }
         }
     }
@@ -46,13 +47,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag, NSDocumentController.shared.documents.isEmpty {
-            NSDocumentController.shared.openDocument(nil)
+            // No visible windows, no open documents: show the welcome window
+            // regardless of the "show on launch" preference — the user has
+            // explicitly poked the Dock icon expecting something to happen.
+            presentWelcomeWindow()
         }
         return true
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         true
+    }
+
+    // MARK: - Welcome window
+
+    private func showWelcomeIfAppropriate() {
+        guard UserDefaults.standard.bool(forKey: WelcomeWindowController.showOnLaunchDefaultsKey) else { return }
+        presentWelcomeWindow()
+    }
+
+    func presentWelcomeWindow() {
+        if welcomeWindowController == nil {
+            welcomeWindowController = WelcomeWindowController()
+        }
+        welcomeWindowController?.reloadRecents()
+        welcomeWindowController?.showWindow(nil)
+        welcomeWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
+    @objc func openDemoProject(_ sender: Any?) {
+        DemoProjectLocator.openDemo()
+    }
+
+    @objc func showWelcomeWindow(_ sender: Any?) {
+        presentWelcomeWindow()
     }
 
     @objc func openReleasesPage(_ sender: Any?) {
