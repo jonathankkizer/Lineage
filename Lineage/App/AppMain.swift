@@ -23,16 +23,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            if NSDocumentController.shared.documents.isEmpty {
-                NSDocumentController.shared.openDocument(nil)
-            }
-        }
     }
 
+    // No-document launch path: AppKit calls this only after restoration and any
+    // Finder-supplied open events have run, so there's no race with the 0.4s
+    // delay we used to need.
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
-        false
+        true
+    }
+
+    func applicationOpenUntitledFile(_ sender: NSApplication) -> Bool {
+        NSDocumentController.shared.openDocument(nil)
+        return true
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -44,5 +46,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         true
+    }
+
+    @objc func openReleasesPage(_ sender: Any?) {
+        guard let url = URL(string: "https://github.com/jonathankkizer/Lineage/releases") else { return }
+        NSWorkspace.shared.open(url)
     }
 }
