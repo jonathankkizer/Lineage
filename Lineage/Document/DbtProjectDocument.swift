@@ -20,8 +20,8 @@ final class DbtProjectDocument: NSDocument {
 
     @MainActor private var loadingTask: Task<Void, Never>?
     @MainActor private var refilterTask: Task<Void, Never>?
-    @MainActor private var pendingFilterWork: DispatchWorkItem?
-    @MainActor private static let filterDebounce: TimeInterval = 0.25
+    @MainActor private var pendingFilterTask: Task<Void, Never>?
+    @MainActor private static let filterDebounce: Duration = .milliseconds(250)
 
     nonisolated override func read(from url: URL, ofType typeName: String) throws {
         let fm = FileManager.default
@@ -105,17 +105,17 @@ final class DbtProjectDocument: NSDocument {
         guard newFilter != nodeFilter else { return }
         nodeFilter = newFilter
 
-        pendingFilterWork?.cancel()
-        let work = DispatchWorkItem { [weak self] in
+        pendingFilterTask?.cancel()
+        pendingFilterTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.filterDebounce)
+            guard !Task.isCancelled else { return }
             self?.commitPendingFilter()
         }
-        pendingFilterWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.filterDebounce, execute: work)
     }
 
     @MainActor
     private func commitPendingFilter() {
-        pendingFilterWork = nil
+        pendingFilterTask = nil
         let appliedFilter = nodeFilter
         guard let full = fullGraph else { return }
         guard let controller = windowControllers.first as? ProjectWindowController else { return }
@@ -123,7 +123,7 @@ final class DbtProjectDocument: NSDocument {
         refilterTask?.cancel()
         refilterTask = Task { [weak self] in
             guard let self else { return }
-            await controller.willRefilter(filter: appliedFilter)
+            controller.willRefilter(filter: appliedFilter)
             let filtered = await Self.applyFilter(graph: full, filter: appliedFilter)
             let layout = await Self.computeLayout(graph: filtered)
             if Task.isCancelled { return }

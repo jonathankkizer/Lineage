@@ -17,15 +17,15 @@ enum AppMenu {
 
     private static func navigateMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "Navigate")
-        let focus = menu.addItem(withTitle: "Focus on Selection", action: Selector(("focusOnSelection:")), keyEquivalent: "\r")
+        let focus = menu.addItem(withTitle: "Focus on Selection", action: #selector(LineageActions.focusOnSelection(_:)), keyEquivalent: "\r")
         focus.keyEquivalentModifierMask = [.command]
-        menu.addItem(withTitle: "Show Overview", action: Selector(("clearFocus:")), keyEquivalent: "\u{1B}")
+        menu.addItem(withTitle: "Show Overview", action: #selector(LineageActions.clearFocus(_:)), keyEquivalent: "\u{1B}")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Back", action: Selector(("focusBack:")), keyEquivalent: "[")
-        menu.addItem(withTitle: "Forward", action: Selector(("focusForward:")), keyEquivalent: "]")
+        menu.addItem(withTitle: "Back", action: #selector(LineageActions.focusBack(_:)), keyEquivalent: "[")
+        menu.addItem(withTitle: "Forward", action: #selector(LineageActions.focusForward(_:)), keyEquivalent: "]")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Expand Focus", action: Selector(("expandFocus:")), keyEquivalent: "")
-        menu.addItem(withTitle: "Contract Focus", action: Selector(("contractFocus:")), keyEquivalent: "")
+        menu.addItem(withTitle: "Expand Focus", action: #selector(LineageActions.expandFocus(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: "Contract Focus", action: #selector(LineageActions.contractFocus(_:)), keyEquivalent: "")
 
         let item = NSMenuItem()
         item.submenu = menu
@@ -36,8 +36,6 @@ enum AppMenu {
         let appName = ProcessInfo.processInfo.processName
         let menu = NSMenu()
         menu.addItem(withTitle: "About \(appName)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
-        menu.addItem(.separator())
-        menu.addItem(withTitle: "Settings\u{2026}", action: nil, keyEquivalent: ",")
         menu.addItem(.separator())
         let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
         let servicesMenu = NSMenu(title: "Services")
@@ -71,7 +69,7 @@ enum AppMenu {
         menu.addItem(.separator())
         menu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Reload Project", action: Selector(("reloadProject:")), keyEquivalent: "r")
+        menu.addItem(withTitle: "Reload Project", action: #selector(LineageActions.reloadProject(_:)), keyEquivalent: "r")
 
         let item = NSMenuItem()
         item.submenu = menu
@@ -80,6 +78,9 @@ enum AppMenu {
 
     private static func editMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "Edit")
+        // undo:/redo: are framework selectors dispatched through the responder chain
+        // (NSDocument's undoManager picks them up). They have no Swift declaration,
+        // so string-form Selector is correct here.
         menu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
         let redo = NSMenuItem(title: "Redo", action: Selector(("redo:")), keyEquivalent: "z")
         redo.keyEquivalentModifierMask = [.command, .shift]
@@ -93,7 +94,7 @@ enum AppMenu {
 
         let findItem = NSMenuItem(title: "Find", action: nil, keyEquivalent: "")
         let findMenu = NSMenu(title: "Find")
-        findMenu.addItem(withTitle: "Find\u{2026}", action: Selector(("focusFilterField:")), keyEquivalent: "f")
+        findMenu.addItem(withTitle: "Find\u{2026}", action: #selector(LineageActions.focusFilterField(_:)), keyEquivalent: "f")
         findItem.submenu = findMenu
         menu.addItem(findItem)
 
@@ -104,28 +105,28 @@ enum AppMenu {
 
     private static func viewMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "View")
-        menu.addItem(withTitle: "Zoom In", action: Selector(("zoomInGraph:")), keyEquivalent: "=")
-        menu.addItem(withTitle: "Zoom Out", action: Selector(("zoomOutGraph:")), keyEquivalent: "-")
-        menu.addItem(withTitle: "Actual Size", action: Selector(("resetZoomGraph:")), keyEquivalent: "0")
-        let zoomFit = menu.addItem(withTitle: "Zoom to Fit", action: Selector(("zoomToFitGraph:")), keyEquivalent: "0")
+        menu.addItem(withTitle: "Zoom In", action: #selector(LineageActions.zoomInGraph(_:)), keyEquivalent: "=")
+        menu.addItem(withTitle: "Zoom Out", action: #selector(LineageActions.zoomOutGraph(_:)), keyEquivalent: "-")
+        menu.addItem(withTitle: "Actual Size", action: #selector(LineageActions.resetZoomGraph(_:)), keyEquivalent: "0")
+        let zoomFit = menu.addItem(withTitle: "Zoom to Fit", action: #selector(LineageActions.zoomToFitGraph(_:)), keyEquivalent: "0")
         zoomFit.keyEquivalentModifierMask = [.command, .shift]
         menu.addItem(.separator())
-        let toggleInspector = NSMenuItem(title: "Toggle Inspector", action: Selector(("toggleInspector:")), keyEquivalent: "i")
+        let toggleInspector = NSMenuItem(title: "Toggle Inspector", action: #selector(LineageActions.toggleInspector(_:)), keyEquivalent: "i")
         toggleInspector.keyEquivalentModifierMask = [.command]
         menu.addItem(toggleInspector)
 
-        menu.addItem(withTitle: "Hide Edges", action: Selector(("toggleShowAllEdges:")), keyEquivalent: "")
+        menu.addItem(withTitle: "Hide Edges", action: #selector(LineageActions.toggleShowAllEdges(_:)), keyEquivalent: "")
         menu.addItem(.separator())
 
         let showItem = NSMenuItem(title: "Show", action: nil, keyEquivalent: "")
         let showMenu = NSMenu(title: "Show")
-        showMenu.addItem(withTitle: "Tests", action: Selector(("toggleShowTests:")), keyEquivalent: "")
-        showMenu.addItem(withTitle: "Sources", action: Selector(("toggleShowSources:")), keyEquivalent: "")
-        showMenu.addItem(withTitle: "Orphan Sources", action: Selector(("toggleShowOrphanSources:")), keyEquivalent: "")
-        showMenu.addItem(withTitle: "Seeds", action: Selector(("toggleShowSeeds:")), keyEquivalent: "")
-        showMenu.addItem(withTitle: "Exposures", action: Selector(("toggleShowExposures:")), keyEquivalent: "")
+        showMenu.addItem(withTitle: "Tests", action: #selector(LineageActions.toggleShowTests(_:)), keyEquivalent: "")
+        showMenu.addItem(withTitle: "Sources", action: #selector(LineageActions.toggleShowSources(_:)), keyEquivalent: "")
+        showMenu.addItem(withTitle: "Orphan Sources", action: #selector(LineageActions.toggleShowOrphanSources(_:)), keyEquivalent: "")
+        showMenu.addItem(withTitle: "Seeds", action: #selector(LineageActions.toggleShowSeeds(_:)), keyEquivalent: "")
+        showMenu.addItem(withTitle: "Exposures", action: #selector(LineageActions.toggleShowExposures(_:)), keyEquivalent: "")
         showMenu.addItem(.separator())
-        showMenu.addItem(withTitle: "Reset to Defaults", action: Selector(("resetFilter:")), keyEquivalent: "")
+        showMenu.addItem(withTitle: "Reset to Defaults", action: #selector(LineageActions.resetFilter(_:)), keyEquivalent: "")
         showItem.submenu = showMenu
         menu.addItem(showItem)
 
@@ -153,7 +154,9 @@ enum AppMenu {
 
     private static func helpMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "Help")
+        menu.addItem(withTitle: "Lineage GitHub Releases", action: #selector(LineageActions.openReleasesPage(_:)), keyEquivalent: "")
         NSApp.helpMenu = menu
+
         let item = NSMenuItem()
         item.submenu = menu
         return item

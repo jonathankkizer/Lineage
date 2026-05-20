@@ -49,7 +49,6 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
         outlineView.outlineTableColumn = column
 
         outlineView.style = .sourceList
-        outlineView.selectionHighlightStyle = .sourceList
         outlineView.headerView = nil
         outlineView.allowsEmptySelection = false
         outlineView.allowsMultipleSelection = false
