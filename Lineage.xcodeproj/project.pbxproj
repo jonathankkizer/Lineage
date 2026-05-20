@@ -118,6 +118,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		ABFCAD0000000000C0FFEEDB /* Copy Demo Project */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
