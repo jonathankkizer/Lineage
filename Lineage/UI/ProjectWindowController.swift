@@ -17,8 +17,8 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
 
     private let loadingOverlay = LoadingOverlayView()
     private var inspectorVisible = true
-    private var loadingShowWorkItem: DispatchWorkItem?
-    private static let loadingDeferDelay: TimeInterval = 0.4
+    private var loadingShowTask: Task<Void, Never>?
+    private static let loadingDeferDelay: Duration = .milliseconds(400)
 
     private var searchQuery: String = ""
     private weak var searchToolbarItem: NSSearchToolbarItem?
@@ -52,6 +52,8 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             window.toolbarStyle = .unified
         }
         window.title = document.displayName ?? "dbt Project"
+        window.isRestorable = true
+        window.setFrameAutosaveName("ProjectWindow")
 
         super.init(window: nil)
         self.window = window
@@ -137,28 +139,27 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     // MARK: - Document callbacks
 
     func showLoading() {
-        scheduleLoadingOverlay(message: "Parsing manifest\u{2026}", delay: 0)
+        scheduleLoadingOverlay(message: "Parsing manifest\u{2026}", delay: nil)
     }
 
-    private func scheduleLoadingOverlay(message: String, delay: TimeInterval) {
-        loadingShowWorkItem?.cancel()
-        if delay <= 0 {
+    private func scheduleLoadingOverlay(message: String, delay: Duration?) {
+        loadingShowTask?.cancel()
+        guard let delay else {
             loadingOverlay.isHidden = false
             loadingOverlay.start(message: message)
             return
         }
-        let work = DispatchWorkItem { [weak self] in
-            guard let self else { return }
+        loadingShowTask = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled, let self else { return }
             self.loadingOverlay.isHidden = false
             self.loadingOverlay.start(message: message)
         }
-        loadingShowWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     private func hideLoadingOverlay() {
-        loadingShowWorkItem?.cancel()
-        loadingShowWorkItem = nil
+        loadingShowTask?.cancel()
+        loadingShowTask = nil
         loadingOverlay.stop()
         loadingOverlay.isHidden = true
     }
