@@ -499,11 +499,11 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         )
     }
 
-    private func applyCurrentFocus(animated: Bool) {
+    private func applyCurrentFocus(animated: Bool, reframe: Bool = true) {
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let duration: CFTimeInterval = (animated && !reduceMotion) ? 0.30 : 0
         let v = computeVisibility()
-        graphView.applyFocus(scope: v.scope, animationDuration: duration)
+        graphView.applyFocus(scope: v.scope, animationDuration: duration, reframe: reframe)
         updateSubtitle(v)
     }
 
@@ -565,7 +565,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     func controlTextDidChange(_ notification: Notification) {
         guard let field = notification.object as? NSSearchField else { return }
         searchQuery = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        applyCurrentFocus(animated: false)
+        applyCurrentFocus(animated: false, reframe: false)
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
