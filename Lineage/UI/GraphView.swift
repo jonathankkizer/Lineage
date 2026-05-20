@@ -127,8 +127,9 @@ final class GraphView: NSView, NSMenuItemValidation {
         renderer.setLevelOfDetail(zoomScale: viewport.scale)
     }
 
-    func applyFocus(scope: SelectionScope?, animationDuration: CFTimeInterval) {
+    func applyFocus(scope: SelectionScope?, animationDuration: CFTimeInterval, reframe: Bool = true) {
         renderer.setFocus(scope, animationDuration: animationDuration)
+        guard reframe else { return }
         let target = renderer.focusBounds()
         if target.width > 0, target.height > 0 {
             viewport = Viewport.fitting(target, in: bounds, padding: 48)
