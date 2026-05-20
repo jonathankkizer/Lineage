@@ -148,7 +148,13 @@ final class UpdateCoordinator {
         )
         switch choice {
         case .viewRelease:
-            NSWorkspace.shared.open(release.htmlURL)
+            // Defensive: htmlURL comes from the GitHub API response. We trust
+            // api.github.com over HTTPS, but a scheme check guarantees we
+            // never hand NSWorkspace a file:// or other non-web URL even if a
+            // future code path widens this source.
+            if release.htmlURL.scheme == "https" {
+                NSWorkspace.shared.open(release.htmlURL)
+            }
         case .skipVersion:
             prefs.skippedVersion = String(describing: latest)
         case .later:

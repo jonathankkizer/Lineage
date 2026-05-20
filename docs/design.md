@@ -64,7 +64,7 @@ Non-negotiable platform behaviors. The whole reason this app exists rather than 
 
 - **NSDocument.** A dbt project is the document. Each open project is an NSDocument instance with its own window. Opening a project means picking the project root (the directory containing `dbt_project.yml`); the app locates `target/` from there.
 - **Recent documents** in the File menu, working correctly with the standard Apple Events plumbing.
-- **Multiple windows for multiple projects** — open Suvida's analytics repo and an experiment repo side by side.
+- **Multiple windows for multiple projects** — open your work analytics repo and an experiment repo side by side.
 - **Tabs within a window** for multiple views of the same project (e.g., full graph in one tab, focused lineage on a specific model in another).
 - **Window state restoration** on relaunch. Open documents, window positions, zoom level, selection, filter state all restore.
 
@@ -147,7 +147,7 @@ DbtViewer/
 
 ### v1 — useful to you, sufficient to ship
 
-The bar: replaces dbt docs' graph view for your daily Suvida work.
+The bar: replaces dbt docs' graph view for your daily analytics work.
 
 - Open a dbt project (pick the project root; app finds `target/manifest.json`)
 - Parse `manifest.json` and render the DAG with layered layout
@@ -201,4 +201,4 @@ The bar: replaces dbt docs' graph view for your daily Suvida work.
 
 The graph view in dbt docs but native. Smooth at any project size that matters. Keyboard-first. The kind of app where a power user can move through a 500-node DAG faster than they can in any web tool, and where the interaction feels like Finder or Nova rather than a browser tab.
 
-Ship v1 when it replaces `dbt docs serve` for daily Suvida work. Everything after that is upside — and a much smaller, more honest commitment than the blob storage app while still building all the AppKit muscles that project would need.
+Ship v1 when it replaces `dbt docs serve` for daily analytics work. Everything after that is upside — and a much smaller, more honest commitment than the blob storage app while still building all the AppKit muscles that project would need.
