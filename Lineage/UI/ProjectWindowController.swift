@@ -505,6 +505,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         let duration: CFTimeInterval = (animated && !reduceMotion) ? 0.30 : 0
         let v = computeVisibility()
         graphView.applyFocus(scope: v.scope, animationDuration: duration, reframe: reframe)
+        graphView.setVisibleNodes(v.scope?.nodes)
         updateSubtitle(v)
     }
 
