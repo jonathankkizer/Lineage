@@ -23,18 +23,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+
+        // State restoration runs asynchronously during launch; documents that
+        // come back via restoration aren't necessarily present in
+        // `NSDocumentController.shared.documents` by the time this method
+        // fires. Wait a beat, then show the Open panel if still empty.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            if NSDocumentController.shared.documents.isEmpty {
+                NSDocumentController.shared.openDocument(nil)
+            }
+        }
     }
 
-    // No-document launch path: AppKit calls this only after restoration and any
-    // Finder-supplied open events have run, so there's no race with the 0.4s
-    // delay we used to need.
+    // We don't have an "untitled document" concept — every Lineage document is
+    // a user-picked folder. Returning false here lets us drive the no-doc
+    // launch path from applicationDidFinishLaunching above, without AppKit
+    // also trying to create an untitled doc.
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
-        true
-    }
-
-    func applicationOpenUntitledFile(_ sender: NSApplication) -> Bool {
-        NSDocumentController.shared.openDocument(nil)
-        return true
+        false
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
