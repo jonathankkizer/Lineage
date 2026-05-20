@@ -62,6 +62,21 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         configureSplitView()
         configureToolbar()
         configureLoadingOverlay()
+
+        graphView.onLineageFilterRequest = { [weak self] query in
+            self?.applyContextLineageQuery(query)
+        }
+        graphView.lineageAvailabilityProvider = { [weak self] id in
+            self?.lineageAvailability(for: id) ?? .both
+        }
+    }
+
+    private func lineageAvailability(for id: NodeID) -> GraphView.LineageAvailability {
+        guard let graph = projectDocument?.graph else { return .both }
+        return GraphView.LineageAvailability(
+            hasUpstream: !graph.parents(of: id).isEmpty,
+            hasDownstream: !graph.children(of: id).isEmpty
+        )
     }
 
     required init?(coder: NSCoder) { nil }
@@ -567,6 +582,14 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         guard let field = notification.object as? NSSearchField else { return }
         searchQuery = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         applyCurrentFocus(animated: false, reframe: false)
+    }
+
+    private func applyContextLineageQuery(_ query: String) {
+        searchQuery = query
+        if let field = searchToolbarItem?.searchField {
+            field.stringValue = query
+        }
+        applyCurrentFocus(animated: true, reframe: true)
     }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {

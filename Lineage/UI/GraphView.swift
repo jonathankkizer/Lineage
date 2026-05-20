@@ -7,10 +7,28 @@ final class GraphView: NSView, NSMenuItemValidation {
     let renderer: GraphRenderer
     let selection: SelectionModel
 
+    /// Invoked when the user picks a lineage option from a node's context menu.
+    /// The string is a `+name` / `+name+` / `name+` selector that the window
+    /// controller pushes into the filter field.
+    var onLineageFilterRequest: ((String) -> Void)?
+
+    /// Tells the context menu whether the right-clicked node has any
+    /// upstream / downstream lineage. When either side returns false, the
+    /// corresponding menu item is shown disabled. Defaults to "both available"
+    /// if no provider is wired.
+    var lineageAvailabilityProvider: ((NodeID) -> LineageAvailability)?
+
+    struct LineageAvailability {
+        var hasUpstream: Bool
+        var hasDownstream: Bool
+        static let both = LineageAvailability(hasUpstream: true, hasDownstream: true)
+    }
+
     private var viewport: Viewport = .identity
     private var hasContent = false
     private var trackingArea: NSTrackingArea?
     private var magnifyRecognizer: NSMagnificationGestureRecognizer!
+    private var contextMenuNode: NodeID?
 
     private enum DragState {
         case none
@@ -280,6 +298,89 @@ final class GraphView: NSView, NSMenuItemValidation {
             return
         }
         if toolTip != name { toolTip = name }
+    }
+
+    // MARK: - Context menu
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        guard hasContent, event.type == .rightMouseDown || event.type == .leftMouseDown else { return nil }
+        let viewPoint = convert(event.locationInWindow, from: nil)
+        let contentPoint = viewport.contentPoint(fromView: viewPoint)
+        guard let id = renderer.nodeID(atContentPoint: contentPoint),
+              let name = renderer.displayName(for: id) else {
+            return nil
+        }
+        selection.replace(with: id)
+        contextMenuNode = id
+
+        let availability = lineageAvailabilityProvider?(id) ?? .both
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        menu.addItem(lineageItem(
+            title: "Filter to Upstream",
+            selector: "+\(name)",
+            action: #selector(filterContextUpstream(_:)),
+            enabled: availability.hasUpstream,
+            disabledTooltip: "No upstream nodes"
+        ))
+        menu.addItem(lineageItem(
+            title: "Filter to Lineage",
+            selector: "+\(name)+",
+            action: #selector(filterContextLineage(_:)),
+            enabled: true,
+            disabledTooltip: nil
+        ))
+        menu.addItem(lineageItem(
+            title: "Filter to Downstream",
+            selector: "\(name)+",
+            action: #selector(filterContextDownstream(_:)),
+            enabled: availability.hasDownstream,
+            disabledTooltip: "No downstream nodes"
+        ))
+        return menu
+    }
+
+    private func lineageItem(
+        title: String,
+        selector queryText: String,
+        action: Selector,
+        enabled: Bool,
+        disabledTooltip: String?
+    ) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        item.representedObject = queryText
+        item.isEnabled = enabled
+        item.toolTip = enabled ? queryText : disabledTooltip
+        item.attributedTitle = lineageItemAttributedTitle(title: title, selector: queryText, enabled: enabled)
+        return item
+    }
+
+    private func lineageItemAttributedTitle(title: String, selector: String, enabled: Bool) -> NSAttributedString {
+        let menuFont = NSFont.menuFont(ofSize: 0)
+        let titleColor: NSColor = enabled ? .labelColor : .disabledControlTextColor
+        let selectorColor: NSColor = enabled ? .secondaryLabelColor : .disabledControlTextColor
+        let result = NSMutableAttributedString(
+            string: title,
+            attributes: [.font: menuFont, .foregroundColor: titleColor]
+        )
+        result.append(NSAttributedString(
+            string: "  \(selector)",
+            attributes: [
+                .font: NSFont.monospacedSystemFont(ofSize: menuFont.pointSize - 1, weight: .regular),
+                .foregroundColor: selectorColor,
+            ]
+        ))
+        return result
+    }
+
+    @objc private func filterContextUpstream(_ sender: NSMenuItem) { fireLineageRequest(from: sender) }
+    @objc private func filterContextLineage(_ sender: NSMenuItem) { fireLineageRequest(from: sender) }
+    @objc private func filterContextDownstream(_ sender: NSMenuItem) { fireLineageRequest(from: sender) }
+
+    private func fireLineageRequest(from item: NSMenuItem) {
+        guard let query = item.representedObject as? String else { return }
+        onLineageFilterRequest?(query)
     }
 
     // MARK: - Menu actions (responder chain)
