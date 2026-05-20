@@ -178,4 +178,4 @@ If anything regresses past these numbers, the cause is usually one of: (a) re-re
 
 Open `Lineage.xcodeproj` in Xcode 16+. Cmd+R. Requires macOS 26+.
 
-To exercise with real data: Cmd+O → `fixtures/data-warehouse/target/`. That's ~1,600 nodes from a real Suvida dbt run.
+For a built-in demo: File → Open Demo Project (the bundled `fixtures/demo-coffee-shop/` fixture). To exercise with real data: Cmd+O → any local `target/` from a real dbt project — keep your own copy outside the repo since the dev fixture isn't checked in.
