@@ -25,6 +25,8 @@ protocol GraphRenderer: AnyObject {
 
     func refreshColors()
 
+    func displayName(for id: NodeID) -> String?
+
     func nodeID(atContentPoint point: CGPoint) -> NodeID?
     func nodeIDs(inContentRect rect: CGRect) -> [NodeID]
 }

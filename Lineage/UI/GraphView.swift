@@ -268,12 +268,11 @@ final class GraphView: NSView, NSMenuItemValidation {
     }
 
     private func updateTooltip(for id: NodeID?) {
-        guard let id, NodeLabelMetrics.isTruncated(id.displayName) else {
+        guard let id, let name = renderer.displayName(for: id), NodeLabelMetrics.isTruncated(name) else {
             if toolTip != nil { toolTip = nil }
             return
         }
-        let newTip = id.displayName
-        if toolTip != newTip { toolTip = newTip }
+        if toolTip != name { toolTip = name }
     }
 
     // MARK: - Menu actions (responder chain)
