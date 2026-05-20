@@ -196,7 +196,7 @@ final class GraphView: NSView, NSMenuItemValidation {
             dragState = .none
             window?.makeFirstResponder(self)
             if event.clickCount == 2 {
-                NSApp.sendAction(Selector(("focusOnSelection:")), to: nil, from: self)
+                NSApp.sendAction(#selector(LineageActions.focusOnSelection(_:)), to: nil, from: self)
             }
             return
         }
@@ -210,15 +210,21 @@ final class GraphView: NSView, NSMenuItemValidation {
     }
 
     override func keyDown(with event: NSEvent) {
-        switch event.keyCode {
-        case 36, 76:  // Return, numpad Enter
+        // Raw Return/Enter focuses the selection without requiring the Cmd modifier
+        // the menu shortcut uses (Cmd+Return). Esc clears focus. Menu key equivalents
+        // cover the modifier-prefixed forms; this override adds the plain-key UX
+        // for when GraphView is firstResponder.
+        switch event.specialKey {
+        case .carriageReturn, .enter:
             if selection.primary != nil {
-                NSApp.sendAction(Selector(("focusOnSelection:")), to: nil, from: self)
+                NSApp.sendAction(#selector(LineageActions.focusOnSelection(_:)), to: nil, from: self)
             }
-        case 53:  // Escape
-            NSApp.sendAction(Selector(("clearFocus:")), to: nil, from: self)
         default:
-            super.keyDown(with: event)
+            if event.charactersIgnoringModifiers == "\u{1B}" {
+                NSApp.sendAction(#selector(LineageActions.clearFocus(_:)), to: nil, from: self)
+            } else {
+                super.keyDown(with: event)
+            }
         }
     }
 
