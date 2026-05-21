@@ -136,15 +136,57 @@ actor GHClient {
         let nameWithOwner: String
         let description: String?
         let isPrivate: Bool
+
+        var owner: String {
+            nameWithOwner.split(separator: "/", maxSplits: 1).first.map(String.init) ?? ""
+        }
     }
 
-    func repositories(limit: Int = 200) async throws -> [Repo] {
+    /// Returns every repo the authenticated user can access — their own plus
+    /// any org they belong to and any repo they're a collaborator on. We
+    /// deliberately use the REST API instead of `gh repo list`, which only
+    /// surfaces the authenticated user's own repos. Repos are returned sorted
+    /// by owner (user first, then orgs alphabetically), then by name.
+    ///
+    /// Note on SAML-protected orgs: if the user's gh token isn't authorized
+    /// for SSO on a given org, that org's repos won't appear here even though
+    /// the user is technically a member. They need to visit
+    /// `https://github.com/orgs/<org>/sso` to grant authorization.
+    func repositories() async throws -> [Repo] {
         let result = try await run(args: [
-            "repo", "list",
-            "--limit", String(limit),
-            "--json", "nameWithOwner,description,isPrivate",
+            "api",
+            "--paginate",
+            "/user/repos?per_page=100&affiliation=owner,collaborator,organization_member&sort=full_name",
+            "--jq", "[.[] | {nameWithOwner: .full_name, description, isPrivate: .private}]",
         ])
-        return try decode([Repo].self, from: result.stdout)
+        let chunks = splitJSONArrays(result.stdout)
+        var all: [Repo] = []
+        var seen: Set<String> = []
+        for chunk in chunks {
+            let part = try decode([Repo].self, from: chunk)
+            for repo in part where !seen.contains(repo.nameWithOwner) {
+                all.append(repo)
+                seen.insert(repo.nameWithOwner)
+            }
+        }
+        let user = try? await currentUsername()
+        return all.sorted { lhs, rhs in
+            // Authenticated user's own repos first, then orgs alphabetical.
+            if lhs.owner == user, rhs.owner != user { return true }
+            if rhs.owner == user, lhs.owner != user { return false }
+            if lhs.owner != rhs.owner { return lhs.owner.localizedCaseInsensitiveCompare(rhs.owner) == .orderedAscending }
+            return lhs.nameWithOwner.localizedCaseInsensitiveCompare(rhs.nameWithOwner) == .orderedAscending
+        }
+    }
+
+    /// Cached "who am I" lookup so we can sort the user's own repos to the top.
+    private var cachedUsername: String?
+    private func currentUsername() async throws -> String {
+        if let cachedUsername { return cachedUsername }
+        let result = try await run(args: ["api", "user", "--jq", ".login"])
+        let name = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        cachedUsername = name
+        return name
     }
 
     // MARK: - Workflows

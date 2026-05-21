@@ -19,6 +19,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var connectGitHubController: ConnectGitHubWindowController?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        // Register fallback values that take effect when the user has never set
+        // a preference explicitly. Critical for first launch — without this,
+        // `UserDefaults.bool(forKey:)` returns false for an unset key and the
+        // Welcome window is suppressed on the very first run.
+        UserDefaults.standard.register(defaults: [
+            WelcomeWindowController.showOnLaunchDefaultsKey: true,
+        ])
+
         documentController = DbtDocumentController()
         NSApp.mainMenu = AppMenu.build()
     }

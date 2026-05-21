@@ -346,7 +346,14 @@ final class ConnectGitHubWindowController: NSWindowController, NSWindowDelegate 
             do {
                 let repos = try await GHClient.shared.repositories()
                 self.repos = repos
-                self.populateRepoPopup()
+                if repos.isEmpty {
+                    self.repoPopup.removeAllItems()
+                    self.repoPopup.addItem(withTitle: "No accessible repositories")
+                    self.repoPopup.isEnabled = false
+                    self.preflightLabel.stringValue = "If a repo lives in an org that uses SAML SSO, visit github.com/orgs/<org>/sso to authorize this token."
+                } else {
+                    self.populateRepoPopup()
+                }
             } catch {
                 self.repoPopup.removeAllItems()
                 self.repoPopup.addItem(withTitle: "Failed to load")
@@ -357,11 +364,39 @@ final class ConnectGitHubWindowController: NSWindowController, NSWindowDelegate 
 
     private func populateRepoPopup() {
         repoPopup.removeAllItems()
+        guard let menu = repoPopup.menu else { return }
+
+        var firstSelectableIndex: Int?
+        var currentOwner: String?
         for repo in repos {
-            repoPopup.addItem(withTitle: repo.nameWithOwner)
+            if repo.owner != currentOwner {
+                if currentOwner != nil {
+                    menu.addItem(.separator())
+                }
+                let header = NSMenuItem(title: repo.owner, action: nil, keyEquivalent: "")
+                header.isEnabled = false
+                header.attributedTitle = NSAttributedString(
+                    string: repo.owner,
+                    attributes: [
+                        .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+                        .foregroundColor: NSColor.secondaryLabelColor,
+                    ]
+                )
+                menu.addItem(header)
+                currentOwner = repo.owner
+            }
+            let item = NSMenuItem(title: repo.nameWithOwner, action: nil, keyEquivalent: "")
+            item.representedObject = repo
+            item.indentationLevel = 1
+            menu.addItem(item)
+            if firstSelectableIndex == nil {
+                firstSelectableIndex = menu.items.count - 1
+            }
         }
+
         repoPopup.isEnabled = !repos.isEmpty
-        if !repos.isEmpty {
+        if let firstSelectableIndex {
+            repoPopup.selectItem(at: firstSelectableIndex)
             repoPopupChanged(repoPopup)
         }
     }
@@ -530,9 +565,7 @@ final class ConnectGitHubWindowController: NSWindowController, NSWindowDelegate 
     // MARK: - Selection helpers
 
     private var currentRepo: GHClient.Repo? {
-        let index = repoPopup.indexOfSelectedItem
-        guard index >= 0, index < repos.count else { return nil }
-        return repos[index]
+        repoPopup.selectedItem?.representedObject as? GHClient.Repo
     }
 
     private var currentWorkflow: GHClient.Workflow? {

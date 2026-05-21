@@ -37,12 +37,6 @@ final class WelcomeWindowController: NSWindowController, NSTableViewDataSource, 
         self.window = window
         window.delegate = self
 
-        // Default the preference to true on first launch.
-        let defaults = UserDefaults.standard
-        if defaults.object(forKey: Self.showOnLaunchDefaultsKey) == nil {
-            defaults.set(true, forKey: Self.showOnLaunchDefaultsKey)
-        }
-
         configureContent()
         configureCheckbox()
         reloadRecents()
