@@ -1,7 +1,7 @@
 import AppKit
 import UniformTypeIdentifiers
 
-final class DbtProjectDocument: NSDocument {
+class DbtProjectDocument: NSDocument {
 
     nonisolated override class var readableTypes: [String] {
         [UTType.folder.identifier]
@@ -9,8 +9,8 @@ final class DbtProjectDocument: NSDocument {
 
     nonisolated override class var autosavesInPlace: Bool { false }
 
-    @MainActor private(set) var manifestURL: URL?
-    @MainActor private(set) var projectRootURL: URL?
+    @MainActor var manifestURL: URL?
+    @MainActor var projectRootURL: URL?
     @MainActor private(set) var fullGraph: Graph?
     @MainActor private(set) var graph: Graph?
     @MainActor private(set) var graphLayout: GraphLayout?
@@ -66,14 +66,18 @@ final class DbtProjectDocument: NSDocument {
 
     @MainActor
     func loadInBackground() async {
-        guard let manifestURL else { return }
         guard let controller = windowControllers.first as? ProjectWindowController else { return }
 
         controller.showLoading()
 
-        let runResultsURL = manifestURL.deletingLastPathComponent().appendingPathComponent("run_results.json")
-
         do {
+            try await prepareForLoad()
+            guard let manifestURL else {
+                throw NSError(domain: NSCocoaErrorDomain, code: NSFileReadCorruptFileError, userInfo: [
+                    NSLocalizedDescriptionKey: "No manifest source resolved.",
+                ])
+            }
+            let runResultsURL = manifestURL.deletingLastPathComponent().appendingPathComponent("run_results.json")
             let manifest = try await Self.parse(url: manifestURL)
             let full = await Self.buildGraph(from: manifest)
             let filtered = await Self.applyFilter(graph: full, filter: nodeFilter)
@@ -90,6 +94,12 @@ final class DbtProjectDocument: NSDocument {
             controller.documentDidFailLoading(error)
         }
     }
+
+    /// Override point for subclasses that need to materialise the manifest from
+    /// somewhere other than the on-disk URL captured during `read(from:ofType:)`
+    /// — e.g. a GitHub Actions artifact download. Default is a no-op.
+    @MainActor
+    func prepareForLoad() async throws {}
 
     @MainActor
     func reload() {

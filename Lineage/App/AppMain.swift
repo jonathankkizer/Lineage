@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var documentController: DbtDocumentController?
     private var welcomeWindowController: WelcomeWindowController?
     private var updateCoordinator: UpdateCoordinator?
+    private var connectGitHubController: ConnectGitHubWindowController?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         documentController = DbtDocumentController()
@@ -100,6 +101,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     @objc func showWelcomeWindow(_ sender: Any?) {
         presentWelcomeWindow()
+    }
+
+    @objc func connectToGitHub(_ sender: Any?) {
+        let controller = ConnectGitHubWindowController()
+        connectGitHubController = controller
+        controller.onClose = { [weak self] in
+            self?.connectGitHubController = nil
+        }
+        controller.showWindow(nil)
+        controller.window?.makeKeyAndOrderFront(nil)
     }
 
     @objc func openReleasesPage(_ sender: Any?) {
