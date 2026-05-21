@@ -10,6 +10,7 @@ import AppKit
     func reloadProject(_ sender: Any?)
     func openDemoProject(_ sender: Any?)
     func showWelcomeWindow(_ sender: Any?)
+    func connectToGitHub(_ sender: Any?)
 
     // View / zoom
     func zoomInGraph(_ sender: Any?)

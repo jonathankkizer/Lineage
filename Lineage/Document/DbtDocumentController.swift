@@ -15,6 +15,9 @@ final class DbtDocumentController: NSDocumentController {
     }
 
     override func typeForContents(of url: URL) throws -> String {
-        UTType.folder.identifier
+        if url.pathExtension.lowercased() == "lineagegh" {
+            return GitHubConnectionDocument.typeIdentifier
+        }
+        return UTType.folder.identifier
     }
 }

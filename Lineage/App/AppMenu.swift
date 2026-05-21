@@ -61,6 +61,9 @@ enum AppMenu {
         menu.addItem(withTitle: "Open\u{2026}", action: #selector(NSDocumentController.openDocument(_:)), keyEquivalent: "o")
         menu.addItem(withTitle: "Open Demo Project", action: #selector(LineageActions.openDemoProject(_:)), keyEquivalent: "")
 
+        let connect = menu.addItem(withTitle: "Connect to GitHub Actions\u{2026}", action: #selector(LineageActions.connectToGitHub(_:)), keyEquivalent: "g")
+        connect.keyEquivalentModifierMask = [.command, .shift]
+
         let openRecent = NSMenuItem(title: "Open Recent", action: nil, keyEquivalent: "")
         let openRecentMenu = NSMenu(title: "Open Recent")
         openRecentMenu.addItem(withTitle: "Clear Menu", action: #selector(NSDocumentController.clearRecentDocuments(_:)), keyEquivalent: "")

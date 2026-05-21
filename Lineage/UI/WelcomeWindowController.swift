@@ -125,12 +125,18 @@ final class WelcomeWindowController: NSWindowController, NSTableViewDataSource, 
             action: #selector(openDemoClicked(_:))
         )
 
+        let connectButton = makeActionButton(
+            title: "Connect to GitHub Actions…",
+            symbolName: "arrow.triangle.2.circlepath",
+            action: #selector(connectToGitHubClicked(_:))
+        )
+
         let identity = NSStackView(views: [title, versionLabel])
         identity.orientation = .vertical
         identity.alignment = .leading
         identity.spacing = 2
 
-        let actions = NSStackView(views: [openButton, demoButton])
+        let actions = NSStackView(views: [openButton, demoButton, connectButton])
         actions.orientation = .vertical
         actions.alignment = .leading
         actions.spacing = 10
@@ -311,6 +317,10 @@ final class WelcomeWindowController: NSWindowController, NSTableViewDataSource, 
 
     @objc private func openDemoClicked(_ sender: Any?) {
         DemoProjectLocator.openDemo()
+    }
+
+    @objc private func connectToGitHubClicked(_ sender: Any?) {
+        NSApp.sendAction(#selector(LineageActions.connectToGitHub(_:)), to: nil, from: sender)
     }
 
     @objc private func openSelectedRecent(_ sender: Any?) {

@@ -18,8 +18,8 @@ The whole reason this app exists rather than another web view. The rules are not
 - **Programmatic UI, no XIBs or Storyboards.** Auto Layout in code, NSStackView for composition. Easier to diff, refactor, and edit with assistance.
 - **Modern Swift wrapped around AppKit.** Swift 6, strict concurrency, async/await throughout. `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` is set project-wide; pure value/compute types are explicitly `nonisolated` and `Sendable`.
 - **Target macOS 26+.** Latest APIs everywhere. No back-compat overhead.
-- **Document architecture via NSDocument.** A dbt project is the document. File menu, Open Recent, multi-window, sandbox-friendly URL bookmarks all flow through standard plumbing.
-- **Sandboxed.** `com.apple.security.app-sandbox`, `files.user-selected.read-only`, `files.bookmarks.app-scope`. Recent documents survive relaunch through bookmark resolution.
+- **Document architecture via NSDocument.** A dbt project is the document — either a local folder or a `.lineagegh` GitHub Actions connection. File menu, Open Recent, multi-window all flow through standard plumbing.
+- **Not sandboxed.** Sandboxing is off (`ENABLE_APP_SANDBOX = NO`) so we can shell out to the user's `gh` CLI for the GitHub Actions integration. Hardened runtime + Developer ID + notarization still apply on release builds. The leftover `startAccessingSecurityScopedResource()` calls are no-ops outside sandbox; left in as cheap insurance if we ever want to revisit.
 - **Light/dark mode adapts cleanly.** All CALayer-cached `CGColor` values re-resolve on `viewDidChangeEffectiveAppearance` via `performAsCurrentDrawingAppearance`.
 - **Native idioms before invention.** Source-list sidebar (NSOutlineView with `.sourceList` style), proper NSToolbar with `toggleSidebar` + `sidebarTrackingSeparator`, NSSplitViewItem with `.inspector` behavior for snap-collapse, Cmd+I to toggle the inspector (the Finder-style "Get Info" convention, not Cmd+Option+I which is Web Inspector / Xcode), Cmd+[/Cmd+] for Safari-style focus history, Cmd+F to focus the search field.
 
@@ -32,6 +32,8 @@ Source tree under `Lineage/`:
 ```
 App/                        @main, AppDelegate, menu bar construction
 Document/                   NSDocument + NSDocumentController subclasses
+GitHub/                     GHClient (gh CLI wrapper), GitHubConnection model,
+                            GitHubConnectionDocument, ConnectGitHubWindowController
 Model/                      Manifest types (Codable), NodeID, ResourceKind, NodeFilter
 Graph/                      Graph value type, Topology, LayeredLayout, LayoutCache, SubgraphSelector
 Rendering/                  GraphRenderer protocol, CALayerGraphRenderer, SpatialIndex,
@@ -85,11 +87,13 @@ These are the non-obvious ones — read them before second-guessing the code.
 8. **Type-banded layout.** `LayeredLayout` lays out sources → seeds → models → exposures → tests as primary bands, with dependency depth as a sub-layer within the model band. Folder-cohesion is added as a 30% bias on top of dependency barycenter, hierarchically weighted (deepest folder pulls hardest).
 9. **Focus mode is a visibility overlay, not a separate graph.** `setFocus(Set<NodeID>?)` dims out-of-focus nodes to 7% opacity and filters edges. The full graph layout is preserved — your spatial memory of where a node lives persists across focus changes. Focus history works like Safari Back/Forward (`Cmd+[`/`Cmd+]`).
 10. **Filter scope applies uniformly to all node types.** Clicking `datamart` in the sidebar shows only nodes whose `originalFilePath` starts with `models/datamart/` — sources living in `staging/sources.yml` do not slip through. If you want to see a node's full lineage including out-of-scope ancestors, double-click it (or Cmd+Return) to enter focus mode, which computes a subgraph from the unfiltered graph.
+11. **GitHub Actions integration shells out to `gh`, not the REST API directly.** `GHClient` is a `Process`-based wrapper. Auth, token storage, host config, and 2FA all live in the user's existing `gh auth login` state — Lineage never touches OAuth or stores tokens. `GitHubConnectionDocument` subclasses `DbtProjectDocument` and overrides the new `prepareForLoad()` hook to download the latest run's artifact into `~/Library/Caches/com.kizersolutions.lineage/github/<repo>/run-<id>/` before the regular parse/graph/layout pipeline runs. Cmd+R re-checks for newer runs; same-run reloads hit the cache.
 
 ## What ships (v1)
 
 - AppKit shell: `@main enum AppMain`, programmatic menu bar with App / File / Edit / View / Navigate / Window / Help, Open Recent integration.
-- Document architecture: opens a folder containing `dbt_project.yml + target/manifest.json`, OR a bare `target/` directly. Sandbox-safe via NSDocument's bookmark mechanism. Cmd+R reloads from disk.
+- Document architecture: opens a folder containing `dbt_project.yml + target/manifest.json`, OR a bare `target/` directly. Cmd+R reloads from disk.
+- GitHub Actions integration (`File → Connect to GitHub Actions…`, also surfaced on the Welcome window): cascading picker for repo / workflow / branch / artifact, gh-status preflight, last-successful-run preview. Saves a `.lineagegh` connection document into `~/Library/Application Support/Lineage/Connections/` and opens it like any other project. Cmd+R re-fetches the latest run via `gh`.
 - Manifest parsing (~10MB JSON): off-main, ~0.5–1.5s. Codable types narrowed to v1 fields only.
 - Graph build: unifies models + sources + exposures from `parent_map`/`child_map`. Filters edges to nodes that exist in the unified set (drops macros, disabled refs).
 - Layered layout with: (a) type bands, (b) barycenter crossing minimization × 4 iterations, (c) per-layer x-centering, (d) wide-layer wrapping (the 411-source layer becomes a tile, not a 65kpt strip), (e) hierarchical folder cohesion bias.
@@ -106,6 +110,9 @@ These are the non-obvious ones — read them before second-guessing the code.
 The architecture absorbs each of these without restructure:
 
 - FSEvents-based reload when `target/` changes on disk
+- Auto-refresh timer for `.lineagegh` connections (the model has a `refreshInterval` field; UI honors the manual default but the timer isn't wired yet)
+- Toolbar sync indicator on GitHub-backed windows ("Synced 2m ago · run #421" + spinner during fetch)
+- Notification when a refresh finds a new build while the window is backgrounded
 - Quick Look preview (Space bar) for compiled SQL
 - `run_results.json` status badges on nodes
 - `catalog.json` integration for actual column types + row counts
