@@ -85,15 +85,38 @@ final class GitHubConnectionDocument: DbtProjectDocument {
         if let manifestCandidate {
             resolvedManifest = manifestCandidate
         } else {
+            // Some dbt-on-Actions workflows suffix the artifact name with the
+            // run id (e.g. `dbt-artifacts-${{ github.run_id }}`) to work around
+            // upload-artifact@v4's duplicate-name rule. The literal name stored
+            // at connect time won't match newer runs, so resolve against the
+            // run's actual artifact list before downloading.
+            let available = (try? await client.artifacts(
+                repo: connection.repo,
+                runID: run.databaseId
+            ))?.filter { $0.expired != true } ?? []
+
+            guard let resolvedName = Self.resolveArtifactName(
+                desired: connection.artifactName,
+                available: available
+            ) else {
+                let names = available.map(\.name).joined(separator: ", ")
+                throw NSError(domain: "GitHubConnectionDocument", code: 4, userInfo: [
+                    NSLocalizedDescriptionKey: "Couldn't find an artifact matching \"\(connection.artifactName)\" in run \(run.databaseId).",
+                    NSLocalizedRecoverySuggestionErrorKey: names.isEmpty
+                        ? "The run produced no artifacts."
+                        : "Available artifacts: \(names).",
+                ])
+            }
+
             let downloadedRoot = try await client.downloadArtifact(
                 repo: connection.repo,
                 runID: run.databaseId,
-                name: connection.artifactName,
+                name: resolvedName,
                 into: cacheRoot
             )
             guard let manifest = Self.findManifest(in: downloadedRoot) else {
                 throw NSError(domain: "GitHubConnectionDocument", code: 3, userInfo: [
-                    NSLocalizedDescriptionKey: "Downloaded artifact \"\(connection.artifactName)\" did not contain a manifest.json.",
+                    NSLocalizedDescriptionKey: "Downloaded artifact \"\(resolvedName)\" did not contain a manifest.json.",
                 ])
             }
             resolvedManifest = manifest
@@ -121,6 +144,34 @@ final class GitHubConnectionDocument: DbtProjectDocument {
             .appendingPathComponent("run-\(runID)", isDirectory: true)
         try fm.createDirectory(at: appCache, withIntermediateDirectories: true)
         return appCache
+    }
+
+    /// Picks the right artifact from a run's list, given the name the user
+    /// originally chose. Order of attempts:
+    ///   1. Exact name match — the simple case.
+    ///   2. Strip a trailing `-<6-or-more-digits>` suffix (GitHub run IDs are
+    ///      ~10 digits) from both the stored name and each candidate, then
+    ///      prefix-match. Catches `dbt-artifacts-${{ github.run_id }}`.
+    ///   3. If the run has exactly one artifact, use it.
+    /// Returns `nil` if nothing reasonable matches.
+    nonisolated static func resolveArtifactName(desired: String, available: [GHClient.Artifact]) -> String? {
+        if available.contains(where: { $0.name == desired }) { return desired }
+
+        let desiredPrefix = stripTrailingRunSuffix(desired)
+        if desiredPrefix != desired {
+            if let match = available.first(where: { stripTrailingRunSuffix($0.name) == desiredPrefix }) {
+                return match.name
+            }
+        }
+
+        if available.count == 1 { return available[0].name }
+        return nil
+    }
+
+    nonisolated static func stripTrailingRunSuffix(_ name: String) -> String {
+        // Six-plus digits avoids stripping date fragments like `-2025-12-01`.
+        guard let range = name.range(of: #"-\d{6,}$"#, options: .regularExpression) else { return name }
+        return String(name[..<range.lowerBound])
     }
 
     /// `target/manifest.json` is the canonical location; some users name the
