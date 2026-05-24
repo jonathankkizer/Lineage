@@ -5,8 +5,14 @@ nonisolated struct BuildTimings: Sendable {
     let percentile: [NodeID: Double]
     let colorScore: [NodeID: Double]
     let generatedAt: String?
+    /// Top-level `elapsed_time` from `run_results.json` — real wall-clock
+    /// seconds for the dbt invocation. Nil when run_results omits it.
+    let wallClockSeconds: TimeInterval?
+    /// Sum of per-node execution times. Represents total warehouse work
+    /// regardless of how it was parallelised.
+    let cpuSeconds: TimeInterval
 
-    static let empty = BuildTimings(executionTime: [:], percentile: [:], colorScore: [:], generatedAt: nil)
+    static let empty = BuildTimings(executionTime: [:], percentile: [:], colorScore: [:], generatedAt: nil, wallClockSeconds: nil, cpuSeconds: 0)
 
     var isEmpty: Bool { executionTime.isEmpty }
 
@@ -21,8 +27,14 @@ nonisolated struct BuildTimings: Sendable {
             times[NodeID(r.uniqueId)] = t
         }
 
+        let wallClock: TimeInterval? = {
+            guard let e = runResults.elapsedTime, e.isFinite, e >= 0 else { return nil }
+            return e
+        }()
+        let cpuTotal = times.values.reduce(0, +)
+
         guard !times.isEmpty else {
-            return BuildTimings(executionTime: [:], percentile: [:], colorScore: [:], generatedAt: runResults.generatedAt)
+            return BuildTimings(executionTime: [:], percentile: [:], colorScore: [:], generatedAt: runResults.generatedAt, wallClockSeconds: wallClock, cpuSeconds: cpuTotal)
         }
 
         let sorted = times.sorted { lhs, rhs in
@@ -50,6 +62,6 @@ nonisolated struct BuildTimings: Sendable {
             for id in times.keys { score[id] = 0 }
         }
 
-        return BuildTimings(executionTime: times, percentile: pct, colorScore: score, generatedAt: runResults.generatedAt)
+        return BuildTimings(executionTime: times, percentile: pct, colorScore: score, generatedAt: runResults.generatedAt, wallClockSeconds: wallClock, cpuSeconds: cpuTotal)
     }
 }

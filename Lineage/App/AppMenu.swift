@@ -123,6 +123,11 @@ enum AppMenu {
         menu.addItem(withTitle: "Navigation Beep", action: #selector(LineageActions.toggleNavigationBeep(_:)), keyEquivalent: "")
         menu.addItem(.separator())
 
+        let criticalPath = NSMenuItem(title: "Show Critical Path", action: #selector(LineageActions.toggleCriticalPath(_:)), keyEquivalent: "p")
+        criticalPath.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(criticalPath)
+        menu.addItem(.separator())
+
         let showItem = NSMenuItem(title: "Show", action: nil, keyEquivalent: "")
         let showMenu = NSMenu(title: "Show")
         showMenu.addItem(withTitle: "Tests", action: #selector(LineageActions.toggleShowTests(_:)), keyEquivalent: "")
