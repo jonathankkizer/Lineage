@@ -305,13 +305,25 @@ actor GHClient {
 
     /// Lists artifacts for a given run via the REST API. `gh run view --json artifacts`
     /// is also possible but the REST shape is more reliable across gh versions.
+    /// Paginates so runs with >30 artifacts are fully enumerated.
     func artifacts(repo: String, runID: Int) async throws -> [Artifact] {
         let result = try await run(args: [
             "api",
-            "repos/\(repo)/actions/runs/\(runID)/artifacts",
+            "--paginate",
+            "repos/\(repo)/actions/runs/\(runID)/artifacts?per_page=100",
             "--jq", ".artifacts",
         ])
-        return try decode([Artifact].self, from: result.stdout)
+        let chunks = splitJSONArrays(result.stdout)
+        var all: [Artifact] = []
+        var seenIDs: Set<Int> = []
+        for chunk in chunks {
+            let part = try decode([Artifact].self, from: chunk)
+            for artifact in part where !seenIDs.contains(artifact.id) {
+                all.append(artifact)
+                seenIDs.insert(artifact.id)
+            }
+        }
+        return all
     }
 
     /// Downloads `name` from a run into `destination` (which is created if it
