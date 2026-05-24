@@ -85,8 +85,8 @@ final class GitHubConnectionDocument: DbtProjectDocument {
         if let manifestCandidate {
             resolvedManifest = manifestCandidate
         } else {
-            // Some dbt-on-Actions workflows suffix the artifact name with the
-            // run id (e.g. `dbt-artifacts-${{ github.run_id }}`) to work around
+            // Some dbt-on-Actions workflows suffix the artifact name with a
+            // per-run value (run id, run number, commit sha) to work around
             // upload-artifact@v4's duplicate-name rule. The literal name stored
             // at connect time won't match newer runs, so resolve against the
             // run's actual artifact list before downloading.
@@ -108,12 +108,28 @@ final class GitHubConnectionDocument: DbtProjectDocument {
                 ])
             }
 
-            let downloadedRoot = try await client.downloadArtifact(
-                repo: connection.repo,
-                runID: run.databaseId,
-                name: resolvedName,
-                into: cacheRoot
-            )
+            let downloadedRoot: URL
+            do {
+                downloadedRoot = try await client.downloadArtifact(
+                    repo: connection.repo,
+                    runID: run.databaseId,
+                    name: resolvedName,
+                    into: cacheRoot
+                )
+            } catch {
+                // The REST list said this name existed but `gh run download`
+                // disagreed — surface what we tried so the failure is
+                // actionable rather than just "gh exited with code 1".
+                let names = available.map(\.name).joined(separator: ", ")
+                let suffix = names.isEmpty
+                    ? "The run produced no artifacts via REST."
+                    : "Resolved \"\(connection.artifactName)\" → \"\(resolvedName)\". Run \(run.databaseId) artifacts (REST): \(names)."
+                let underlying = (error as NSError).localizedDescription
+                throw NSError(domain: "GitHubConnectionDocument", code: 5, userInfo: [
+                    NSLocalizedDescriptionKey: "Couldn't download artifact from run \(run.databaseId).",
+                    NSLocalizedRecoverySuggestionErrorKey: "\(underlying)\n\n\(suffix)",
+                ])
+            }
             guard let manifest = Self.findManifest(in: downloadedRoot) else {
                 throw NSError(domain: "GitHubConnectionDocument", code: 3, userInfo: [
                     NSLocalizedDescriptionKey: "Downloaded artifact \"\(resolvedName)\" did not contain a manifest.json.",
@@ -149,29 +165,45 @@ final class GitHubConnectionDocument: DbtProjectDocument {
     /// Picks the right artifact from a run's list, given the name the user
     /// originally chose. Order of attempts:
     ///   1. Exact name match — the simple case.
-    ///   2. Strip a trailing `-<6-or-more-digits>` suffix (GitHub run IDs are
-    ///      ~10 digits) from both the stored name and each candidate, then
-    ///      prefix-match. Catches `dbt-artifacts-${{ github.run_id }}`.
-    ///   3. If the run has exactly one artifact, use it.
+    ///   2. Strip a trailing per-run suffix (digits of any length, or a hex
+    ///      string of 7+ chars for commit SHAs) from both the stored name and
+    ///      each candidate, then compare stems. Catches `${{ github.run_id }}`,
+    ///      `${{ github.run_number }}`, and `${{ github.sha }}` patterns.
+    ///   3. If the desired stem is a hyphen-prefix of some candidate, use it.
+    ///      Handles the case where the stored name has no suffix at all but
+    ///      the workflow has since been changed to add one (or vice versa).
+    ///   4. If the run has exactly one artifact, use it.
     /// Returns `nil` if nothing reasonable matches.
     nonisolated static func resolveArtifactName(desired: String, available: [GHClient.Artifact]) -> String? {
         if available.contains(where: { $0.name == desired }) { return desired }
 
-        let desiredPrefix = stripTrailingRunSuffix(desired)
-        if desiredPrefix != desired {
-            if let match = available.first(where: { stripTrailingRunSuffix($0.name) == desiredPrefix }) {
-                return match.name
-            }
+        let desiredStem = stripTrailingRunSuffix(desired)
+        if let match = available.first(where: { stripTrailingRunSuffix($0.name) == desiredStem }) {
+            return match.name
+        }
+
+        if let match = available.first(where: { $0.name.hasPrefix(desiredStem + "-") }) {
+            return match.name
         }
 
         if available.count == 1 { return available[0].name }
         return nil
     }
 
+    /// Strips ONE trailing per-run suffix. Two patterns covered:
+    ///   - `-<digits>` of any length: `github.run_id` (10+), `github.run_number`
+    ///     (small), `github.run_attempt`.
+    ///   - `-<hex>` of length 7+: full or abbreviated commit SHA.
+    /// Single-strip (not iterative) so date fragments like `-2025-12-01` only
+    /// drop the last segment; they don't collapse all the way to the prefix.
     nonisolated static func stripTrailingRunSuffix(_ name: String) -> String {
-        // Six-plus digits avoids stripping date fragments like `-2025-12-01`.
-        guard let range = name.range(of: #"-\d{6,}$"#, options: .regularExpression) else { return name }
-        return String(name[..<range.lowerBound])
+        if let range = name.range(of: #"-[0-9]+$"#, options: .regularExpression) {
+            return String(name[..<range.lowerBound])
+        }
+        if let range = name.range(of: #"-[0-9a-f]{7,}$"#, options: .regularExpression) {
+            return String(name[..<range.lowerBound])
+        }
+        return name
     }
 
     /// `target/manifest.json` is the canonical location; some users name the

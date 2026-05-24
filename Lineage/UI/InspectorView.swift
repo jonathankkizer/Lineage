@@ -112,6 +112,10 @@ final class InspectorView: NSView {
             let edgeCount = graph.forward.reduce(0) { $0 + $1.value.count }
             contentStack.addArrangedSubview(labeledRow("Edges", value: monoText("\(edgeCount)")))
             contentStack.addArrangedSubview(labeledRow("Invocation", value: monoText(graph.invocationID, truncates: true)))
+
+            if let doc = documentProvider() {
+                addLastBuildSection(document: doc)
+            }
             return
         }
 
@@ -227,7 +231,7 @@ final class InspectorView: NSView {
         return label
     }
 
-    private func labeledRow(_ key: String, value: NSView) -> NSView {
+    private func labeledRow(_ key: String, value: NSView, tooltip: String? = nil) -> NSView {
         let stack = NSStackView()
         stack.orientation = .horizontal
         stack.alignment = .firstBaseline
@@ -245,6 +249,9 @@ final class InspectorView: NSView {
 
         stack.addArrangedSubview(keyLabel)
         stack.addArrangedSubview(value)
+        if let tooltip {
+            stack.toolTip = tooltip
+        }
         return stack
     }
 
@@ -474,6 +481,47 @@ final class InspectorView: NSView {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return view
+    }
+
+    private func addLastBuildSection(document: DbtProjectDocument) {
+        let timings = document.buildTimings
+        guard !timings.isEmpty || timings.wallClockSeconds != nil else { return }
+
+        contentStack.addArrangedSubview(spacer(16))
+        contentStack.addArrangedSubview(sectionHeader("LAST BUILD"))
+
+        if let wall = timings.wallClockSeconds {
+            contentStack.addArrangedSubview(labeledRow(
+                "Wall clock",
+                value: monoText(Self.formatDuration(wall)),
+                tooltip: "Real elapsed time of the last dbt build, end to end. Read from run_results.json's elapsed_time."
+            ))
+        }
+        if timings.cpuSeconds > 0 {
+            contentStack.addArrangedSubview(labeledRow(
+                "Total CPU",
+                value: monoText(Self.formatDuration(timings.cpuSeconds)),
+                tooltip: "Sum of every model's execution time. Total warehouse work performed, regardless of how it was parallelised. Always ≥ wall clock."
+            ))
+        }
+        if let cp = document.criticalPath {
+            let nodeCount = cp.nodes.count
+            let suffix = nodeCount == 1 ? "1 node" : "\(nodeCount) nodes"
+            contentStack.addArrangedSubview(labeledRow(
+                "Critical path",
+                value: monoText("\(Self.formatDuration(cp.totalSeconds))  ·  \(suffix)"),
+                tooltip: "The longest dependency chain by build time — the theoretical floor on wall clock assuming infinite warehouse concurrency. Optimizing a node on this path shortens the whole build; optimizing one off it doesn't."
+            ))
+            if let wall = timings.wallClockSeconds, wall > 0, cp.totalSeconds > 0, cp.totalSeconds < wall {
+                let ratio = cp.totalSeconds / wall
+                let pct = Int((ratio * 100).rounded())
+                contentStack.addArrangedSubview(labeledRow(
+                    "Floor / actual",
+                    value: monoText("\(pct)%"),
+                    tooltip: "Critical path as a percent of actual wall clock. High (near 100%) means the build is already well-parallelised — next wins require model optimization. Low means there's slack — check dbt thread count and warehouse concurrency."
+                ))
+            }
+        }
     }
 
     private static func formatDuration(_ t: TimeInterval) -> String {

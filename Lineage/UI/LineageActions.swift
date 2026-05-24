@@ -19,6 +19,7 @@ import AppKit
     func zoomToFitGraph(_ sender: Any?)
     func toggleInspector(_ sender: Any?)
     func toggleShowAllEdges(_ sender: Any?)
+    func toggleCriticalPath(_ sender: Any?)
 
     // Filters
     func toggleShowTests(_ sender: Any?)

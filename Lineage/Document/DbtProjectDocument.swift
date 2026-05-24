@@ -15,6 +15,7 @@ class DbtProjectDocument: NSDocument {
     @MainActor private(set) var graph: Graph?
     @MainActor private(set) var graphLayout: GraphLayout?
     @MainActor private(set) var buildTimings: BuildTimings = .empty
+    @MainActor private(set) var criticalPath: CriticalPath?
     @MainActor private(set) var loadError: Error?
     @MainActor private(set) var nodeFilter: NodeFilter = .default
 
@@ -83,10 +84,12 @@ class DbtProjectDocument: NSDocument {
             let filtered = await Self.applyFilter(graph: full, filter: nodeFilter)
             let layout = await Self.computeLayout(graph: filtered)
             let timings = await Self.loadBuildTimings(url: runResultsURL)
+            let cp = await Self.computeCriticalPath(graph: full, timings: timings)
             self.fullGraph = full
             self.graph = filtered
             self.graphLayout = layout
             self.buildTimings = timings
+            self.criticalPath = cp
             self.loadError = nil
             controller.documentDidFinishLoading()
         } catch {
@@ -169,6 +172,12 @@ class DbtProjectDocument: NSDocument {
     private static func computeLayout(graph: Graph) async -> GraphLayout {
         await Task.detached(priority: .userInitiated) {
             LayeredLayout.compute(graph: graph)
+        }.value
+    }
+
+    private static func computeCriticalPath(graph: Graph, timings: BuildTimings) async -> CriticalPath? {
+        await Task.detached(priority: .userInitiated) {
+            CriticalPath.compute(graph: graph, timings: timings)
         }.value
     }
 

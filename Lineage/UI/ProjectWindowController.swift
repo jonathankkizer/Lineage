@@ -28,10 +28,14 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     private var coloringMode: NodeColoring = .kind
     private weak var coloringSegmented: NSSegmentedControl?
 
+    private var criticalPathActive: Bool = false
+    private weak var criticalPathButton: NSButton?
+
     nonisolated private static let zoomToFitID = NSToolbarItem.Identifier("zoom-to-fit")
     nonisolated private static let searchID = NSToolbarItem.Identifier("search")
     nonisolated private static let filterID = NSToolbarItem.Identifier("filter")
     nonisolated private static let coloringID = NSToolbarItem.Identifier("coloring")
+    nonisolated private static let criticalPathID = NSToolbarItem.Identifier("critical-path")
     nonisolated private static let toggleInspectorID = NSToolbarItem.Identifier("toggle-inspector")
 
     init(document: DbtProjectDocument) {
@@ -204,6 +208,14 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         graphView.setColoring(coloringMode)
         graphView.resetBulkEdgesToAuto()
         inspectorView.documentDidLoad(graph: graph)
+
+        // If we reloaded into a project that no longer has timings, turn CP off
+        // so the toolbar button doesn't sit in an .on state with no effect.
+        if document.criticalPath == nil, criticalPathActive {
+            criticalPathActive = false
+        }
+        criticalPathButton?.state = criticalPathActive ? .on : .off
+        applyCurrentFocus(animated: false, reframe: false)
     }
 
     func documentDidFailLoading(_ error: Error) {
@@ -223,11 +235,11 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     // MARK: - Toolbar
 
     nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.coloringID, .flexibleSpace, Self.searchID, .flexibleSpace, Self.toggleInspectorID]
+        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.coloringID, Self.criticalPathID, .flexibleSpace, Self.searchID, .flexibleSpace, Self.toggleInspectorID]
     }
 
     nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.coloringID, Self.searchID, Self.toggleInspectorID, .flexibleSpace, .space]
+        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.coloringID, Self.criticalPathID, Self.searchID, Self.toggleInspectorID, .flexibleSpace, .space]
     }
 
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
@@ -283,6 +295,31 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             item.image = NSImage(systemSymbolName: "sidebar.right", accessibilityDescription: "Inspector")
             item.target = self
             item.action = #selector(toggleInspector(_:))
+            return item
+
+        case Self.criticalPathID:
+            let button = NSButton()
+            button.image = NSImage(systemSymbolName: "point.bottomleft.forward.to.point.topright.scurvepath", accessibilityDescription: "Critical path")
+            button.alternateImage = NSImage(systemSymbolName: "point.bottomleft.forward.to.point.topright.scurvepath.fill", accessibilityDescription: "Critical path")
+            button.setButtonType(.pushOnPushOff)
+            button.bezelStyle = .texturedRounded
+            button.imagePosition = .imageOnly
+            button.imageScaling = .scaleProportionallyDown
+            button.state = criticalPathActive ? .on : .off
+            button.target = self
+            button.action = #selector(toggleCriticalPath(_:))
+            button.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                button.widthAnchor.constraint(equalToConstant: 40),
+                button.heightAnchor.constraint(equalToConstant: 26),
+            ])
+            criticalPathButton = button
+
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            item.view = button
+            item.label = "Critical Path"
+            item.paletteLabel = "Critical Path"
+            item.toolTip = "Highlight the build's critical path (longest weighted chain). ⇧⌘P"
             return item
 
         case Self.coloringID:
@@ -454,10 +491,19 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         var focusEntry: FocusEntry?
         var focusNodeCount: Int
         var searchMatchCount: Int?
+        var criticalPathActive: Bool
+        var criticalPath: CriticalPath?
     }
 
     private func computeVisibility() -> Visibility {
-        var v = Visibility(scope: nil, focusEntry: focusHistory.current, focusNodeCount: 0, searchMatchCount: nil)
+        var v = Visibility(
+            scope: nil,
+            focusEntry: focusHistory.current,
+            focusNodeCount: 0,
+            searchMatchCount: nil,
+            criticalPathActive: criticalPathActive,
+            criticalPath: projectDocument?.criticalPath
+        )
         guard let graph = projectDocument?.graph else { return v }
 
         var focusScope: SelectionScope?
@@ -478,23 +524,33 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             v.searchMatchCount = s.nodes.count
         }
 
-        switch (focusScope, searchScope) {
-        case let (focus?, search?):
-            // Both active: intersect node sets; directional info doesn't compose cleanly,
-            // so fall back to flat scope. The visible nodes are still correctly clipped.
-            v.scope = SelectionScope(
-                nodes: focus.nodes.intersection(search.nodes),
-                upstream: nil,
-                downstream: nil
-            )
-        case let (focus?, nil):
-            v.scope = focus
-        case let (nil, search?):
-            v.scope = search
-        case (nil, nil):
-            v.scope = nil
+        // Critical path is a flat node-set scope when active. It composes by
+        // intersection alongside focus and search, same as the others.
+        var cpScope: SelectionScope?
+        if criticalPathActive, let cp = v.criticalPath {
+            // Clip to the currently-filtered graph so the scope is meaningful;
+            // a CP node hidden by the active filter shouldn't reappear.
+            let visibleCPNodes = cp.nodeSet.intersection(graph.nodes.keys)
+            cpScope = SelectionScope.nodesOnly(visibleCPNodes)
         }
+
+        v.scope = Self.intersectScopes([focusScope, searchScope, cpScope])
         return v
+    }
+
+    /// Intersects any non-nil scopes by node set. Directional (upstream/downstream)
+    /// info from focus is preserved only if focus is the *only* active scope —
+    /// the moment we intersect with anything else, edge directionality stops
+    /// composing cleanly so we degrade to a flat node set.
+    private static func intersectScopes(_ scopes: [SelectionScope?]) -> SelectionScope? {
+        let active = scopes.compactMap { $0 }
+        if active.isEmpty { return nil }
+        if active.count == 1 { return active[0] }
+        var nodes = active[0].nodes
+        for s in active.dropFirst() {
+            nodes.formIntersection(s.nodes)
+        }
+        return SelectionScope(nodes: nodes, upstream: nil, downstream: nil)
     }
 
     private static func lineageScope(graph: Graph, anchor: NodeID, upstreamHops: Int, downstreamHops: Int) -> SelectionScope {
@@ -533,6 +589,9 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         if let n = v.searchMatchCount {
             parts.append("Search: \(n) match\(n == 1 ? "" : "es")")
         }
+        if v.criticalPathActive, let cp = v.criticalPath {
+            parts.append("Critical path: \(Self.formatDuration(cp.totalSeconds)) · \(cp.nodes.count) node\(cp.nodes.count == 1 ? "" : "s")")
+        }
         if parts.isEmpty {
             if let root = projectDocument?.projectRootURL?.lastPathComponent {
                 window?.subtitle = root
@@ -542,6 +601,41 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         } else {
             window?.subtitle = parts.joined(separator: "  ·  ")
         }
+    }
+
+    /// Mirror of InspectorView.formatDuration — kept local so the subtitle
+    /// composer doesn't reach across modules. Update both together.
+    static func formatDuration(_ t: TimeInterval) -> String {
+        if t < 1 {
+            return "\(Int((t * 1000).rounded())) ms"
+        }
+        if t < 10 {
+            return String(format: "%.2f s", t)
+        }
+        if t < 60 {
+            return String(format: "%.1f s", t)
+        }
+        let total = Int(t.rounded())
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        if h > 0 {
+            return "\(h)h \(m)m"
+        }
+        return "\(m)m \(s)s"
+    }
+
+    // MARK: - Critical path actions
+
+    @objc func toggleCriticalPath(_ sender: Any?) {
+        guard projectDocument?.criticalPath != nil else {
+            criticalPathActive = false
+            criticalPathButton?.state = .off
+            return
+        }
+        criticalPathActive.toggle()
+        criticalPathButton?.state = criticalPathActive ? .on : .off
+        applyCurrentFocus(animated: true, reframe: false)
     }
 
     // MARK: - Search
@@ -635,6 +729,10 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             return searchToolbarItem?.searchField != nil
         case #selector(reloadProject(_:)):
             return projectDocument?.manifestURL != nil
+        case #selector(toggleCriticalPath(_:)):
+            let available = projectDocument?.criticalPath != nil
+            menuItem.state = (available && criticalPathActive) ? .on : .off
+            return available
         default:
             return true
         }
