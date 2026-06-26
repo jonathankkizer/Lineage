@@ -36,6 +36,13 @@ enum RendererColors {
         border(for: fill(for: kind))
     }
 
+    // Native node body: neutral card with kind color carried by the icon + leading bar.
+    static var nodeBodyFill: NSColor { .controlBackgroundColor }
+    static var nodeBodyBorder: NSColor { .separatorColor }
+    static var nodeBodyFillSelected: NSColor { .selectedContentBackgroundColor }
+    static var nodeLabelText: NSColor { .labelColor }
+    static var nodeLabelTextSelected: NSColor { .alternateSelectedControlTextColor }
+
     // Node chip styling (used by the graph renderer).
     private static let chipFillAlpha: CGFloat = 0.14
     private static let chipBorderAlpha: CGFloat = 0.70
