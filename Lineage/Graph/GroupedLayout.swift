@@ -25,13 +25,19 @@ enum GroupedLayout {
         let rank = Topology.longestPathLayers(graph, topoOrder: topo)
 
         let root = buildTrie(graph: graph)
-        let box = layout(root, graph: graph, rank: rank, orientation: orientation)
+        // Each top-level folder is laid out internally (nested packing preserved),
+        // then the neighbourhoods are arranged by inter-folder dependency flow.
+        let topGroups: [(key: String, box: Box)] = root.children
+            .sorted { $0.key < $1.key }
+            .map { (key: $0.key, box: layout($0.value, graph: graph, rank: rank, orientation: orientation)) }
+            .filter { !$0.box.positions.isEmpty }
+        let positions = arrangeTopLevel(topGroups, graph: graph)
 
         var minX = CGFloat.greatestFiniteMagnitude
         var maxX = -CGFloat.greatestFiniteMagnitude
         var minY = CGFloat.greatestFiniteMagnitude
         var maxY = -CGFloat.greatestFiniteMagnitude
-        for (id, p) in box.positions {
+        for (id, p) in positions {
             let w = widths[id] ?? NodeLabelMetrics.minWidth
             minX = min(minX, p.x - w / 2)
             maxX = max(maxX, p.x + w / 2)
@@ -42,10 +48,10 @@ enum GroupedLayout {
             ? CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
             : .zero
 
-        let clusters = topLevelClusters(graph: graph, positions: box.positions, widths: widths, nodeHeight: nodeHeight)
+        let clusters = topLevelClusters(graph: graph, positions: positions, widths: widths, nodeHeight: nodeHeight)
 
         return GraphLayout(
-            positions: box.positions,
+            positions: positions,
             widths: widths,
             nodeHeight: nodeHeight,
             orientation: orientation,
@@ -54,6 +60,95 @@ enum GroupedLayout {
             clusters: clusters,
             bounds: bounds
         )
+    }
+
+    // MARK: - Top-level arrangement (dependency-flow columns)
+
+    /// Arrange top-level neighbourhood boxes left-to-right by inter-folder
+    /// dependency depth, stacking same-depth folders vertically — so a folder
+    /// flows to the *right* of the folders it depends on (sources → staging →
+    /// marts) instead of wrapping below them.
+    nonisolated private static func arrangeTopLevel(
+        _ groups: [(key: String, box: Box)],
+        graph: Graph
+    ) -> [NodeID: CGPoint] {
+        guard groups.count > 1 else { return groups.first?.box.positions ?? [:] }
+
+        let boxByKey = Dictionary(uniqueKeysWithValues: groups.map { ($0.key, $0.box) })
+        let keys = groups.map(\.key)
+
+        var clusterOf: [NodeID: String] = [:]
+        clusterOf.reserveCapacity(graph.nodes.count)
+        for (id, node) in graph.nodes { clusterOf[id] = groupSegments(for: node).first ?? "models" }
+
+        // Inter-cluster DAG: A → B if any node in A feeds a node in B.
+        var adj: [String: Set<String>] = [:]
+        var indeg: [String: Int] = Dictionary(uniqueKeysWithValues: keys.map { ($0, 0) })
+        for (parent, kids) in graph.forward {
+            guard let cp = clusterOf[parent] else { continue }
+            for child in kids {
+                guard let cc = clusterOf[child], cc != cp else { continue }
+                if adj[cp, default: []].insert(cc).inserted { indeg[cc, default: 0] += 1 }
+            }
+        }
+
+        // Longest-path rank (Kahn); any cycle leftovers land in a trailing column.
+        var rankOf: [String: Int] = [:]
+        var localIndeg = indeg
+        var queue = keys.filter { (localIndeg[$0] ?? 0) == 0 }.sorted()
+        for k in queue { rankOf[k] = 0 }
+        var head = 0
+        while head < queue.count {
+            let k = queue[head]; head += 1
+            let r = rankOf[k] ?? 0
+            for c in (adj[k] ?? []).sorted() {
+                rankOf[c] = max(rankOf[c] ?? 0, r + 1)
+                localIndeg[c, default: 0] -= 1
+                if localIndeg[c] == 0 { queue.append(c) }
+            }
+        }
+        let maxRank = rankOf.values.max() ?? 0
+        for k in keys where rankOf[k] == nil { rankOf[k] = maxRank + 1 }
+
+        var columns: [Int: [String]] = [:]
+        for k in keys { columns[rankOf[k]!, default: []].append(k) }
+
+        var centerY: [String: CGFloat] = [:]
+        var originOf: [String: CGPoint] = [:]
+        var columnX: CGFloat = 0
+        for r in columns.keys.sorted() {
+            var colKeys = columns[r]!
+            // Order within the column by the average y of already-placed upstream
+            // folders, to keep connected neighbourhoods roughly aligned.
+            func desiredY(_ k: String) -> CGFloat {
+                let ys = keys.compactMap { adj[$0]?.contains(k) == true ? centerY[$0] : nil }
+                return ys.isEmpty ? 0 : ys.reduce(0, +) / CGFloat(ys.count)
+            }
+            colKeys.sort { a, b in
+                let da = desiredY(a), db = desiredY(b)
+                if da != db { return da < db }
+                return a < b
+            }
+
+            let colWidth = colKeys.map { boxByKey[$0]!.size.width }.max() ?? 0
+            let colHeight = colKeys.reduce(CGFloat(0)) { $0 + boxByKey[$1]!.size.height }
+                + CGFloat(max(0, colKeys.count - 1)) * groupGutter
+            var y = -colHeight / 2
+            for k in colKeys {
+                let b = boxByKey[k]!
+                originOf[k] = CGPoint(x: columnX + (colWidth - b.size.width) / 2, y: y)
+                centerY[k] = y + b.size.height / 2
+                y += b.size.height + groupGutter
+            }
+            columnX += colWidth + groupGutter
+        }
+
+        var positions: [NodeID: CGPoint] = [:]
+        for (key, box) in groups {
+            let o = originOf[key] ?? .zero
+            for (id, p) in box.positions { positions[id] = CGPoint(x: p.x + o.x, y: p.y + o.y) }
+        }
+        return positions
     }
 
     // MARK: - Cluster bounds (top-level neighbourhoods)

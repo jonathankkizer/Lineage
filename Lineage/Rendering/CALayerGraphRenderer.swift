@@ -13,6 +13,7 @@ final class CALayerGraphRenderer: GraphRenderer {
     private let edgeDownstreamLayer = CAShapeLayer()
     private let nodeContainerLayer = CALayer()
     private let regionContainerLayer = CALayer()
+    private let regionLabelLayer = CALayer()
     private let selectionRingLayer = CAShapeLayer()
     private let marqueeLayer = CAShapeLayer()
 
@@ -84,11 +85,13 @@ final class CALayerGraphRenderer: GraphRenderer {
         marqueeLayer.lineWidth = 1
 
         regionContainerLayer.opacity = 0
+        regionLabelLayer.opacity = 0
         contentLayer.addSublayer(regionContainerLayer)
         contentLayer.addSublayer(edgeLayer)
         contentLayer.addSublayer(edgeUpstreamLayer)
         contentLayer.addSublayer(edgeDownstreamLayer)
         contentLayer.addSublayer(nodeContainerLayer)
+        contentLayer.addSublayer(regionLabelLayer)   // labels above nodes so they stay legible
         contentLayer.addSublayer(selectionRingLayer)
         rootLayer.addSublayer(contentLayer)
         rootLayer.addSublayer(marqueeLayer)
@@ -215,6 +218,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         if edgeLayer.isHidden == edgesVisible { edgeLayer.isHidden = !edgesVisible }
         if edgeLayer.opacity != edgeOpacity { edgeLayer.opacity = edgeOpacity }
         if regionContainerLayer.opacity != tileOpacity { regionContainerLayer.opacity = tileOpacity }
+        if regionLabelLayer.opacity != tileOpacity { regionLabelLayer.opacity = tileOpacity }
         CATransaction.commit()
     }
 
@@ -414,31 +418,38 @@ final class CALayerGraphRenderer: GraphRenderer {
         CATransaction.setDisableActions(true)
         defer { CATransaction.commit() }
         regionContainerLayer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        regionLabelLayer.sublayers?.forEach { $0.removeFromSuperlayer() }
         guard let layout else { return }
         for cluster in layout.clusters {
-            regionContainerLayer.addSublayer(makeTileLayer(cluster))
+            regionContainerLayer.addSublayer(makeTileBackground(cluster))
+            if let label = makeTileLabel(cluster) {
+                regionLabelLayer.addSublayer(label)
+            }
         }
     }
 
-    private func makeTileLayer(_ cluster: LayoutCluster) -> CALayer {
-        let w = cluster.bounds.width
-        let h = cluster.bounds.height
-
+    /// The territory wash + colored boundary, drawn *behind* the nodes.
+    private func makeTileBackground(_ cluster: LayoutCluster) -> CALayer {
         let tile = CALayer()
         tile.frame = cluster.bounds
-        tile.cornerRadius = min(28, min(w, h) * 0.06)
+        tile.cornerRadius = min(28, min(cluster.bounds.width, cluster.bounds.height) * 0.06)
         tile.cornerCurve = .continuous
         tile.backgroundColor = RendererColors.regionTint(for: cluster.label).cgColor
         tile.borderColor = RendererColors.regionTintBorder(for: cluster.label).cgColor
         tile.borderWidth = 1.5
-        tile.contentsScale = backingScale
+        return tile
+    }
 
-        // Fit the label to the tile (both axes). Drop the count, then the whole
-        // label, when the tile is too small — never show a truncated "se…".
+    /// The territory label on a translucent plate, drawn *above* the nodes so it
+    /// stays legible. Returns nil when the tile is too small to label.
+    private func makeTileLabel(_ cluster: LayoutCluster) -> CALayer? {
+        let w = cluster.bounds.width
+        let h = cluster.bounds.height
+
         func fit(_ text: String) -> CGFloat {
             let byWidth = (w * 0.9) / (CGFloat(max(text.count, 3)) * 0.60)
-            let byHeight = h * 0.22
-            return min(byWidth, byHeight, 160)
+            let byHeight = h * 0.30
+            return min(byWidth, byHeight, 150)
         }
         var includeCount = w > 200 && h > 80
         var text = includeCount ? "\(cluster.label)  \(cluster.nodeCount)" : cluster.label
@@ -448,26 +459,34 @@ final class CALayerGraphRenderer: GraphRenderer {
             text = cluster.label
             fontSize = fit(text)
         }
-        guard fontSize >= 11 else { return tile }
+        guard fontSize >= 11 else { return nil }
 
-        let canvasWidth = max(1, w * 0.92)
-        let canvasHeight = fontSize * 1.4
-        if let img = TileLabelRenderer.image(
+        // Size the plate to the measured text rather than the whole tile.
+        let nameFont = NSFont.systemFont(ofSize: fontSize, weight: .bold)
+        let measured = (text as NSString).size(withAttributes: [.font: nameFont]).width
+        let padX = fontSize * 0.7
+        let padY = fontSize * 0.35
+        let canvasWidth = min(w * 0.95, measured + padX * 2)
+        let canvasHeight = fontSize + padY * 2
+
+        guard let img = TileLabelRenderer.image(
             label: cluster.label,
             count: includeCount ? cluster.nodeCount : nil,
             fontSize: fontSize,
             canvas: CGSize(width: canvasWidth, height: canvasHeight),
             backingScale: backingScale
-        ) {
-            let label = CALayer()
-            label.contents = img
-            label.contentsScale = backingScale
-            label.contentsGravity = .center
-            label.bounds = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
-            label.position = CGPoint(x: w / 2, y: h / 2)
-            tile.addSublayer(label)
-        }
-        return tile
+        ) else { return nil }
+
+        let label = CALayer()
+        label.contents = img
+        label.contentsScale = backingScale
+        label.contentsGravity = .center
+        label.bounds = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
+        label.position = CGPoint(x: cluster.bounds.midX, y: cluster.bounds.midY)
+        label.backgroundColor = RendererColors.regionLabelPlate.cgColor
+        label.cornerRadius = canvasHeight * 0.3
+        label.cornerCurve = .continuous
+        return label
     }
 
     private func resolveChipStyle(id: NodeID, kind: ResourceKind) -> ChipStyle {

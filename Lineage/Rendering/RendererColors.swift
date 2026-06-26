@@ -129,6 +129,12 @@ enum RendererColors {
         .secondaryLabelColor
     }
 
+    // Translucent plate behind a territory label so it stays legible where the
+    // label sits over the (tiny) nodes.
+    static var regionLabelPlate: NSColor {
+        NSColor.windowBackgroundColor.withAlphaComponent(0.72)
+    }
+
     // Stable per-folder tint so neighbourhoods read as distinct territories.
     // FNV-1a over the name → hue, so colors are deterministic across launches.
     private static func stableHue(for name: String) -> CGFloat {
