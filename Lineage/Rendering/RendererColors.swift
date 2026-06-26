@@ -117,38 +117,32 @@ enum RendererColors {
         NSColor.tertiaryLabelColor
     }
 
+    // Territories are neutral "group boxes" (NSBox / Finder-section idiom) — a
+    // whisper of fill + a hairline border. The kind-colored nodes carry the
+    // color; the territory defers. No per-folder rainbow.
     static var regionFill: NSColor {
-        NSColor.labelColor.withAlphaComponent(0.04)
+        NSColor.labelColor.withAlphaComponent(0.035)
     }
 
     static var regionBorder: NSColor {
-        NSColor.labelColor.withAlphaComponent(0.12)
+        .separatorColor
     }
 
-    static var regionLabel: NSColor {
-        .secondaryLabelColor
+    static var regionLabelName: NSColor {
+        .labelColor
     }
 
-    // Translucent plate behind a territory label so it stays legible where the
-    // label sits over the (tiny) nodes.
+    static var regionLabelCount: NSColor {
+        .tertiaryLabelColor
+    }
+
+    // Subtle material chip behind a territory's top-left header label.
     static var regionLabelPlate: NSColor {
-        NSColor.windowBackgroundColor.withAlphaComponent(0.72)
+        NSColor.windowBackgroundColor.withAlphaComponent(0.82)
     }
 
-    // Stable per-folder tint so neighbourhoods read as distinct territories.
-    // FNV-1a over the name → hue, so colors are deterministic across launches.
-    private static func stableHue(for name: String) -> CGFloat {
-        var h: UInt64 = 1469598103934665603
-        for b in name.utf8 { h = (h ^ UInt64(b)) &* 1099511628211 }
-        return CGFloat(h % 360) / 360
-    }
-
-    static func regionTint(for name: String) -> NSColor {
-        NSColor(hue: stableHue(for: name), saturation: 0.55, brightness: 0.62, alpha: 0.13)
-    }
-
-    static func regionTintBorder(for name: String) -> NSColor {
-        NSColor(hue: stableHue(for: name), saturation: 0.55, brightness: 0.62, alpha: 0.45)
+    static var regionLabelPlateBorder: NSColor {
+        NSColor.separatorColor.withAlphaComponent(0.6)
     }
 
     static var selection: NSColor { .controlAccentColor }

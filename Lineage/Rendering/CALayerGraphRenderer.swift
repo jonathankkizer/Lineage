@@ -428,50 +428,52 @@ final class CALayerGraphRenderer: GraphRenderer {
         }
     }
 
-    /// The territory wash + colored boundary, drawn *behind* the nodes.
+    /// The territory as a neutral "group box" (NSBox idiom) — a whisper of fill
+    /// and a hairline border, drawn *behind* the nodes.
     private func makeTileBackground(_ cluster: LayoutCluster) -> CALayer {
         let tile = CALayer()
         tile.frame = cluster.bounds
-        tile.cornerRadius = min(28, min(cluster.bounds.width, cluster.bounds.height) * 0.06)
+        tile.cornerRadius = min(24, min(cluster.bounds.width, cluster.bounds.height) * 0.05)
         tile.cornerCurve = .continuous
-        tile.backgroundColor = RendererColors.regionTint(for: cluster.label).cgColor
-        tile.borderColor = RendererColors.regionTintBorder(for: cluster.label).cgColor
-        tile.borderWidth = 1.5
+        tile.backgroundColor = RendererColors.regionFill.cgColor
+        tile.borderColor = RendererColors.regionBorder.cgColor
+        tile.borderWidth = 1
         return tile
     }
 
-    /// The territory label on a translucent plate, drawn *above* the nodes so it
-    /// stays legible. Returns nil when the tile is too small to label.
+    /// A Finder-style header (folder symbol + name + count) on a subtle material
+    /// chip, pinned to the territory's top-left and drawn *above* the nodes.
+    /// Returns nil when the tile is too small to label.
     private func makeTileLabel(_ cluster: LayoutCluster) -> CALayer? {
         let w = cluster.bounds.width
         let h = cluster.bounds.height
 
-        func fit(_ text: String) -> CGFloat {
-            let byWidth = (w * 0.9) / (CGFloat(max(text.count, 3)) * 0.60)
-            let byHeight = h * 0.30
-            return min(byWidth, byHeight, 150)
+        var includeCount = w > 160 && h > 60
+        func fontFitting() -> CGFloat {
+            let byHeight = h * 0.16
+            let probe: CGFloat = 40
+            let needed = TileLabelRenderer.contentWidth(
+                label: cluster.label, count: includeCount ? cluster.nodeCount : nil, fontSize: probe)
+            let byWidth = probe * (w * 0.82) / max(needed, 1)
+            return min(byHeight, byWidth, 80)
         }
-        var includeCount = w > 200 && h > 80
-        var text = includeCount ? "\(cluster.label)  \(cluster.nodeCount)" : cluster.label
-        var fontSize = fit(text)
-        if includeCount, fontSize < 20 {
+        var fontSize = fontFitting()
+        if includeCount, fontSize < 15 {
             includeCount = false
-            text = cluster.label
-            fontSize = fit(text)
+            fontSize = fontFitting()
         }
-        guard fontSize >= 11 else { return nil }
+        guard fontSize >= 10 else { return nil }
 
-        // Size the plate to the measured text rather than the whole tile.
-        let nameFont = NSFont.systemFont(ofSize: fontSize, weight: .bold)
-        let measured = (text as NSString).size(withAttributes: [.font: nameFont]).width
-        let padX = fontSize * 0.7
-        let padY = fontSize * 0.35
-        let canvasWidth = min(w * 0.95, measured + padX * 2)
-        let canvasHeight = fontSize + padY * 2
+        let count = includeCount ? cluster.nodeCount : nil
+        let contentW = TileLabelRenderer.contentWidth(label: cluster.label, count: count, fontSize: fontSize)
+        let padX = fontSize * 0.6
+        let padY = fontSize * 0.38
+        let canvasWidth = min(w * 0.95, contentW + padX * 2)
+        let canvasHeight = fontSize * 1.18 + padY * 2
 
         guard let img = TileLabelRenderer.image(
             label: cluster.label,
-            count: includeCount ? cluster.nodeCount : nil,
+            count: count,
             fontSize: fontSize,
             canvas: CGSize(width: canvasWidth, height: canvasHeight),
             backingScale: backingScale
@@ -482,9 +484,15 @@ final class CALayerGraphRenderer: GraphRenderer {
         label.contentsScale = backingScale
         label.contentsGravity = .center
         label.bounds = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
-        label.position = CGPoint(x: cluster.bounds.midX, y: cluster.bounds.midY)
+        // Pin to the territory's top-left corner (anchor stays centered;
+        // position the center so the chip's corner sits just inside the box).
+        let inset = max(10, fontSize * 0.35)
+        label.position = CGPoint(x: cluster.bounds.minX + inset + canvasWidth / 2,
+                                 y: cluster.bounds.minY + inset + canvasHeight / 2)
         label.backgroundColor = RendererColors.regionLabelPlate.cgColor
-        label.cornerRadius = canvasHeight * 0.3
+        label.borderColor = RendererColors.regionLabelPlateBorder.cgColor
+        label.borderWidth = 1
+        label.cornerRadius = canvasHeight * 0.32
         label.cornerCurve = .continuous
         return label
     }
