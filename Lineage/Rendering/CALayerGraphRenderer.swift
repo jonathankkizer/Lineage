@@ -38,14 +38,16 @@ final class CALayerGraphRenderer: GraphRenderer {
     static let unfocusedOpacity: Float = 0.07
     static let bulkEdgeRenderCap = 800
 
-    // Semantic-zoom tiers: detail (chips + labels), blocks (solid color blocks),
-    // regions (folder territory tiles). Thresholds are on viewport.scale.
-    private enum LODBucket: Int { case detail, blocks, regions }
+    // Node appearance tiers: detail (chips + labels) and blocks (solid color
+    // blocks). Nodes stay visible at every zoom; folder territory tiles fade in
+    // *behind* them as a guide, and edges fade out. All thresholds on viewport.scale.
+    private enum LODBucket: Int { case detail, blocks }
     private var lastLOD: LODBucket = .detail
-    // Colored blocks show much farther out than chips; tiles are reserved for the
-    // most zoomed-out view so you see model structure sooner on big projects.
-    private static let blocksThreshold: CGFloat = 0.42
-    private static let regionsThreshold: CGFloat = 0.12
+    private var zoomScale: CGFloat = 1
+    private static let blocksThreshold: CGFloat = 0.42   // chips → blocks
+    private static let edgeFadeFloor: CGFloat = 0.12     // edges fully gone below this
+    private static let tileFadeStart: CGFloat = 0.42     // tiles begin fading in below this
+    private static let tileFadeEnd: CGFloat = 0.18       // tiles fully opaque at/below this
 
     init() {
         rootLayer = CALayer()
@@ -139,9 +141,8 @@ final class CALayerGraphRenderer: GraphRenderer {
 
         rebuildEdgePath()
         rebuildRegionTiles()
-        applyBulkEdgeVisibility()
         rebuildHighlights()
-        applyTierContainers(animated: false)
+        updateOverviewLayers()
     }
 
     /// Animate to a new layout for the SAME node set (e.g. switching layout
@@ -175,9 +176,8 @@ final class CALayerGraphRenderer: GraphRenderer {
         CATransaction.commit()
 
         rebuildRegionTiles()
-        applyBulkEdgeVisibility()
         rebuildHighlights()
-        applyTierContainers(animated: animationDuration > 0)
+        updateOverviewLayers()
     }
 
     func setViewport(_ transform: CGAffineTransform, animationDuration: CFTimeInterval) {
@@ -193,36 +193,43 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     func setLevelOfDetail(zoomScale: CGFloat) {
-        // Continuous edge fade — runs every frame so edges dissolve smoothly as
-        // you zoom out instead of a flat haze at fit.
-        let targetEdgeOpacity = Self.edgeOpacityRamp(zoomScale)
-        if edgeLayer.opacity != targetEdgeOpacity {
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            edgeLayer.opacity = targetEdgeOpacity
-            CATransaction.commit()
-        }
+        self.zoomScale = zoomScale
+        updateOverviewLayers()
 
-        let bucket: LODBucket
-        if zoomScale < Self.regionsThreshold { bucket = .regions }
-        else if zoomScale < Self.blocksThreshold { bucket = .blocks }
-        else { bucket = .detail }
-
+        let bucket: LODBucket = zoomScale < Self.blocksThreshold ? .blocks : .detail
         guard bucket != lastLOD else { return }
         lastLOD = bucket
-        applyTier()
+        applyNodeTier()
+    }
+
+    /// Continuous, per-frame: edges fade out and folder territory tiles fade in
+    /// as you zoom out. Nodes always stay visible — the tiles sit *behind* them
+    /// as a guide to which areas of the project to explore.
+    private func updateOverviewLayers() {
+        let edgeOpacity = Self.edgeOpacityRamp(zoomScale)
+        let tileOpacity = (layout?.clusters.isEmpty ?? true) ? 0 : Self.tileOpacityRamp(zoomScale)
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let edgesVisible = bulkEdgesEnabled && edgeOpacity > 0.001
+        if edgeLayer.isHidden == edgesVisible { edgeLayer.isHidden = !edgesVisible }
+        if edgeLayer.opacity != edgeOpacity { edgeLayer.opacity = edgeOpacity }
+        if regionContainerLayer.opacity != tileOpacity { regionContainerLayer.opacity = tileOpacity }
+        CATransaction.commit()
     }
 
     private static func edgeOpacityRamp(_ scale: CGFloat) -> Float {
-        let lo = regionsThreshold, hi = blocksThreshold
-        let t = max(0, min(1, (scale - lo) / (hi - lo)))
-        return Float(t)
+        Float(max(0, min(1, (scale - edgeFadeFloor) / (blocksThreshold - edgeFadeFloor))))
     }
 
-    /// Apply the current tier's resting node appearance, then cross-fade the
-    /// region tiles vs. nodes/edges. Selection/hover overrides are re-layered by
-    /// rebuildHighlights().
-    private func applyTier() {
+    private static func tileOpacityRamp(_ scale: CGFloat) -> Float {
+        // 0 at/above the detail threshold, full once well zoomed out.
+        Float(max(0, min(1, (tileFadeStart - scale) / (tileFadeStart - tileFadeEnd))))
+    }
+
+    /// Switch the node resting appearance between detail chips and solid blocks.
+    /// Selection/hover overrides are re-layered by rebuildHighlights().
+    private func applyNodeTier() {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         for (id, layer) in nodeLayers {
@@ -244,30 +251,7 @@ final class CALayerGraphRenderer: GraphRenderer {
             }
         }
         CATransaction.commit()
-
-        applyBulkEdgeVisibility()
         rebuildHighlights()
-        applyTierContainers(animated: true)
-    }
-
-    private func applyTierContainers(animated: Bool) {
-        let hasClusters = !(layout?.clusters.isEmpty ?? true)
-        let regionsActive = (lastLOD == .regions) && hasClusters
-
-        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        CATransaction.begin()
-        if animated && !reduceMotion {
-            CATransaction.setAnimationDuration(0.22)
-            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
-        } else {
-            CATransaction.setDisableActions(true)
-        }
-        regionContainerLayer.opacity = regionsActive ? 1 : 0
-        nodeContainerLayer.opacity = regionsActive ? 0 : 1
-        let hideHighlightEdges = (lastLOD == .regions)
-        edgeUpstreamLayer.isHidden = hideHighlightEdges
-        edgeDownstreamLayer.isHidden = hideHighlightEdges
-        CATransaction.commit()
     }
 
     func setSelection(_ ids: Set<NodeID>, primary: NodeID?) {
@@ -363,23 +347,14 @@ final class CALayerGraphRenderer: GraphRenderer {
     func setBulkEdgesEnabled(_ enabled: Bool) {
         guard bulkEdgesEnabled != enabled else { return }
         bulkEdgesEnabled = enabled
-        applyBulkEdgeVisibility()
+        updateOverviewLayers()
     }
 
     func areBulkEdgesEnabled() -> Bool { bulkEdgesEnabled }
 
     func resetBulkEdgesToAuto() {
         bulkEdgesEnabled = true
-        applyBulkEdgeVisibility()
-    }
-
-    private func applyBulkEdgeVisibility() {
-        let shouldShow = bulkEdgesEnabled && lastLOD != .regions
-        guard edgeLayer.isHidden == shouldShow else { return }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        edgeLayer.isHidden = !shouldShow
-        CATransaction.commit()
+        updateOverviewLayers()
     }
 
     private func reapplyNodeColors() {
@@ -414,7 +389,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         case .detail:
             let s = resolveChipStyle(id: id, kind: kind)
             return BaseStyle(fill: s.fill.cgColor, border: s.border.cgColor, borderWidth: 1, showLabel: true)
-        case .blocks, .regions:
+        case .blocks:
             return BaseStyle(fill: solidColor(id: id, kind: kind).cgColor, border: NSColor.clear.cgColor, borderWidth: 0, showLabel: false)
         }
     }
