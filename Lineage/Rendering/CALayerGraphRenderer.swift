@@ -27,6 +27,7 @@ final class CALayerGraphRenderer: GraphRenderer {
     private var currentHover: NodeID?
     private var focusScope: SelectionScope?
     private var lastAffected: Set<NodeID> = []
+    private var filledSelection: Set<NodeID> = []
     private var coloringMode: NodeColoring = .kind
     private var buildTimings: BuildTimings = .empty
     private var totalEdgeCount: Int = 0
@@ -113,6 +114,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         nodeLayers.removeAll(keepingCapacity: true)
         nodeLayers.reserveCapacity(graph.nodes.count)
         lastAffected.removeAll(keepingCapacity: true)
+        filledSelection.removeAll(keepingCapacity: true)
         focusScope = nil
 
         for (id, point) in layout.positions {
@@ -167,7 +169,7 @@ final class CALayerGraphRenderer: GraphRenderer {
             if showLabels {
                 if layer.contents == nil, let node = graph?.nodes[id], let layout {
                     let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
-                    layer.contents = labelCache.image(text: node.name, kind: node.kind, size: size, backingScale: backingScale)
+                    layer.contents = nodeImage(node: node, size: size, selected: currentSelection.contains(id))
                 }
             } else {
                 layer.contents = nil
@@ -305,8 +307,8 @@ final class CALayerGraphRenderer: GraphRenderer {
         switch coloringMode {
         case .kind:
             return ChipStyle(
-                fill: RendererColors.nodeChipFill(for: kind),
-                border: RendererColors.nodeChipBorder(for: kind)
+                fill: RendererColors.nodeBodyFill,
+                border: RendererColors.nodeBodyBorder
             )
         case .buildTime:
             if let p = buildTimings.colorScore[id] {
@@ -377,22 +379,27 @@ final class CALayerGraphRenderer: GraphRenderer {
         index?.query(rect: rect) ?? []
     }
 
+    private func nodeImage(node: GraphNode, size: CGSize, selected: Bool) -> CGImage? {
+        labelCache.image(text: node.name, kind: node.kind, size: size, backingScale: backingScale, selected: selected)
+    }
+
     private func makeNodeLayer(node: GraphNode, center: CGPoint, size: CGSize) -> CALayer {
         let layer = CALayer()
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         layer.bounds = CGRect(origin: .zero, size: size)
         layer.position = center
-        layer.cornerRadius = 6
+        layer.cornerRadius = NodeLabelMetrics.cornerRadius
         layer.cornerCurve = .continuous
         layer.borderWidth = 1
+        let selected = currentSelection.contains(node.id)
         let style = resolveChipStyle(id: node.id, kind: node.kind)
-        layer.backgroundColor = style.fill.cgColor
+        layer.backgroundColor = (selected ? RendererColors.nodeBodyFillSelected : style.fill).cgColor
         layer.borderColor = style.border.cgColor
         layer.contentsScale = backingScale
         layer.contentsGravity = .center
         layer.opacity = isInFocus(node.id) ? Self.focusedOpacity : Self.unfocusedOpacity
         layer.actions = ["contents": NSNull(), "borderColor": NSNull(), "borderWidth": NSNull(), "backgroundColor": NSNull()]
-        layer.contents = labelCache.image(text: node.name, kind: node.kind, size: size, backingScale: backingScale)
+        layer.contents = nodeImage(node: node, size: size, selected: selected)
         return layer
     }
 
@@ -401,7 +408,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         for (id, layer) in nodeLayers {
             guard let node = graph.nodes[id] else { continue }
             let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
-            layer.contents = labelCache.image(text: node.name, kind: node.kind, size: size, backingScale: backingScale)
+            layer.contents = nodeImage(node: node, size: size, selected: currentSelection.contains(id))
         }
     }
 
@@ -479,6 +486,28 @@ final class CALayerGraphRenderer: GraphRenderer {
         }
 
         lastAffected = affected
+
+        // Native selection: fill the body with the accent color and swap to the
+        // high-contrast label variant. Only the (small) selection set is touched.
+        let showLabels = lastLOD == .full
+        for id in filledSelection.subtracting(currentSelection) {
+            guard let layer = nodeLayers[id], let node = graph?.nodes[id] else { continue }
+            let style = resolveChipStyle(id: id, kind: node.kind)
+            layer.backgroundColor = style.fill.cgColor
+            if showLabels, let layout {
+                let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
+                layer.contents = nodeImage(node: node, size: size, selected: false)
+            }
+        }
+        for id in currentSelection {
+            guard let layer = nodeLayers[id], let node = graph?.nodes[id] else { continue }
+            layer.backgroundColor = RendererColors.nodeBodyFillSelected.cgColor
+            if showLabels, let layout {
+                let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
+                layer.contents = nodeImage(node: node, size: size, selected: true)
+            }
+        }
+        filledSelection = currentSelection
 
         guard let graph, let layout else {
             selectionRingLayer.path = nil

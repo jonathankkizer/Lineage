@@ -44,4 +44,20 @@ nonisolated enum ResourceKind: String, Sendable, CaseIterable {
         case .unknown: "Unknown"
         }
     }
+
+    var symbolName: String {
+        switch self {
+        case .model: "tablecells"
+        case .source: "cylinder.split.1x2"
+        case .seed: "leaf"
+        case .test: "checkmark.seal"
+        case .snapshot: "camera"
+        case .exposure: "chart.bar"
+        case .metric: "chart.line.uptrend.xyaxis"
+        case .semanticModel: "point.3.connected.trianglepath.dotted"
+        case .savedQuery: "bookmark"
+        case .unitTest: "checkmark.diamond"
+        case .unknown: "questionmark.square.dashed"
+        }
+    }
 }
