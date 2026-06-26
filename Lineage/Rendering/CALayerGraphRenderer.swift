@@ -132,6 +132,40 @@ final class CALayerGraphRenderer: GraphRenderer {
         rebuildHighlights()
     }
 
+    /// Animate to a new layout for the SAME node set (e.g. switching layout
+    /// algorithm). Reuses the existing node layers and morphs the edge path
+    /// instead of tearing everything down, so positions glide.
+    func setLayout(_ newLayout: GraphLayout, animationDuration: CFTimeInterval) {
+        guard graph != nil else {
+            return
+        }
+        layout = newLayout
+        contentBounds = newLayout.bounds
+        index = SpatialIndex.build(
+            positions: newLayout.positions,
+            widths: newLayout.widths,
+            nodeHeight: newLayout.nodeHeight,
+            defaultWidth: NodeLabelMetrics.minWidth
+        )
+
+        CATransaction.begin()
+        if animationDuration > 0 {
+            CATransaction.setAnimationDuration(animationDuration)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
+        } else {
+            CATransaction.setDisableActions(true)
+        }
+        for (id, layer) in nodeLayers {
+            guard let p = newLayout.positions[id] else { continue }
+            layer.position = p
+        }
+        edgeLayer.path = buildEdgePath()
+        CATransaction.commit()
+
+        applyBulkEdgeVisibility()
+        rebuildHighlights()
+    }
+
     func setViewport(_ transform: CGAffineTransform, animationDuration: CFTimeInterval) {
         CATransaction.begin()
         if animationDuration > 0 {
@@ -413,9 +447,15 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     private func rebuildEdgePath() {
-        guard let graph, let layout else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        edgeLayer.path = buildEdgePath()
+        CATransaction.commit()
+    }
+
+    private func buildEdgePath() -> CGPath {
+        guard let graph, let layout else { return CGMutablePath() }
         let path = CGMutablePath()
-        let half = layout.nodeHeight / 2
 
         let useCap = focusScope == nil && totalEdgeCount > Self.bulkEdgeRenderCap
         let stride = useCap ? max(1, totalEdgeCount / Self.bulkEdgeRenderCap) : 1
@@ -423,22 +463,45 @@ final class CALayerGraphRenderer: GraphRenderer {
         var emitIndex = 0
         let sortedParents = graph.forward.keys.sorted { $0.rawValue < $1.rawValue }
         for parent in sortedParents {
-            guard let children = graph.forward[parent], let p = layout.positions[parent] else { continue }
+            guard let children = graph.forward[parent], let pr = layout.rect(for: parent) else { continue }
             for child in children {
                 let take = (emitIndex % stride == 0)
                 emitIndex += 1
                 guard take else { continue }
-                guard let c = layout.positions[child] else { continue }
+                guard let cr = layout.rect(for: child) else { continue }
                 guard edgeBelongsToScope(parent: parent, child: child) else { continue }
-                path.move(to: CGPoint(x: p.x, y: p.y + half))
-                path.addLine(to: CGPoint(x: c.x, y: c.y - half))
+                Self.appendEdge(path, from: pr, to: cr, orientation: layout.orientation)
             }
         }
+        return path
+    }
 
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        edgeLayer.path = path
-        CATransaction.commit()
+    /// One curved (cubic-bezier) edge that exits the downstream face of the
+    /// parent and enters the upstream face of the child. Orientation picks the
+    /// axis: LR → right→left, TB → bottom→top.
+    nonisolated private static func appendEdge(
+        _ path: CGMutablePath,
+        from p: CGRect,
+        to c: CGRect,
+        orientation: LayoutOrientation
+    ) {
+        let start: CGPoint, end: CGPoint, c1: CGPoint, c2: CGPoint
+        switch orientation {
+        case .topToBottom:
+            start = CGPoint(x: p.midX, y: p.maxY)
+            end = CGPoint(x: c.midX, y: c.minY)
+            let dy = (end.y - start.y) * 0.5
+            c1 = CGPoint(x: start.x, y: start.y + dy)
+            c2 = CGPoint(x: end.x, y: end.y - dy)
+        case .leftToRight:
+            start = CGPoint(x: p.maxX, y: p.midY)
+            end = CGPoint(x: c.minX, y: c.midY)
+            let dx = (end.x - start.x) * 0.5
+            c1 = CGPoint(x: start.x + dx, y: start.y)
+            c2 = CGPoint(x: end.x - dx, y: end.y)
+        }
+        path.move(to: start)
+        path.addCurve(to: end, control1: c1, control2: c2)
     }
 
     private func rebuildHighlights() {
@@ -516,21 +579,18 @@ final class CALayerGraphRenderer: GraphRenderer {
             return
         }
 
-        let halfH = layout.nodeHeight / 2
-        if let anchor = highlightAnchor, let ap = layout.positions[anchor], isInFocus(anchor) {
+        if let anchor = highlightAnchor, let ar = layout.rect(for: anchor), isInFocus(anchor) {
             let upPath = CGMutablePath()
             for parent in graph.parents(of: anchor) where edgeBelongsToScope(parent: parent, child: anchor) {
-                guard let p = layout.positions[parent] else { continue }
-                upPath.move(to: CGPoint(x: p.x, y: p.y + halfH))
-                upPath.addLine(to: CGPoint(x: ap.x, y: ap.y - halfH))
+                guard let pr = layout.rect(for: parent) else { continue }
+                Self.appendEdge(upPath, from: pr, to: ar, orientation: layout.orientation)
             }
             edgeUpstreamLayer.path = upPath
 
             let downPath = CGMutablePath()
             for child in graph.children(of: anchor) where edgeBelongsToScope(parent: anchor, child: child) {
-                guard let c = layout.positions[child] else { continue }
-                downPath.move(to: CGPoint(x: ap.x, y: ap.y + halfH))
-                downPath.addLine(to: CGPoint(x: c.x, y: c.y - halfH))
+                guard let cr = layout.rect(for: child) else { continue }
+                Self.appendEdge(downPath, from: ar, to: cr, orientation: layout.orientation)
             }
             edgeDownstreamLayer.path = downPath
         } else {

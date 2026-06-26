@@ -1,17 +1,23 @@
 import CoreGraphics
 import Foundation
 
+nonisolated enum LayoutOrientation: Sendable {
+    case topToBottom
+    case leftToRight
+}
+
 nonisolated struct GraphLayout: Sendable {
     let positions: [NodeID: CGPoint]
     let widths: [NodeID: CGFloat]
     let nodeHeight: CGFloat
+    let orientation: LayoutOrientation
     let layerCount: Int
-    let layerY: [CGFloat]
+    let layerDepths: [CGFloat]
     let bounds: CGRect
 
     static let empty = GraphLayout(
-        positions: [:], widths: [:], nodeHeight: 0,
-        layerCount: 0, layerY: [], bounds: .zero
+        positions: [:], widths: [:], nodeHeight: 0, orientation: .leftToRight,
+        layerCount: 0, layerDepths: [], bounds: .zero
     )
 
     func width(for id: NodeID) -> CGFloat {
@@ -27,14 +33,15 @@ nonisolated struct GraphLayout: Sendable {
 
 enum LayeredLayout {
 
-    nonisolated static let horizontalSpacing: CGFloat = 14
-    nonisolated static let verticalSpacing: CGFloat = 56
-    nonisolated static let rowSpacing: CGFloat = 10
-    nonisolated static let maxRowWidth: CGFloat = 4500
+    nonisolated static let crossSpacing: CGFloat = 14
+    nonisolated static let depthSpacing: CGFloat = 56
+    nonisolated static let laneSpacing: CGFloat = 10
+    nonisolated static let maxLaneExtent: CGFloat = 4500
     nonisolated static let crossingIterations = 4
+    nonisolated static let alignmentIterations = 2
     nonisolated static let folderCohesionWeight: CGFloat = 0.30
 
-    nonisolated static func compute(graph: Graph) -> GraphLayout {
+    nonisolated static func compute(graph: Graph, orientation: LayoutOrientation = .leftToRight) -> GraphLayout {
         guard !graph.nodes.isEmpty else { return .empty }
 
         var widths: [NodeID: CGFloat] = [:]
@@ -43,195 +50,232 @@ enum LayeredLayout {
             widths[id] = NodeLabelMetrics.nodeWidth(for: node.name)
         }
 
+        let nodeHeight = NodeLabelMetrics.height
+        let axis = Axis(orientation: orientation, widths: widths, nodeHeight: nodeHeight)
+
+        // Dependency rank across the WHOLE DAG (dagre-style longest-path), no
+        // per-type bands. Roots (sources/seeds) fall to rank 0; leaves
+        // (tests/exposures) drift to the far edge naturally.
         let topo = Topology.topologicallySort(graph)
+        let rank = Topology.longestPathLayers(graph, topoOrder: topo)
+        let maxRank = rank.values.max() ?? 0
 
-        // Dependency-based sub-layer for the model/snapshot band only:
-        // longest path from any other model/snapshot parent.
-        var modelSubLayer: [NodeID: Int] = [:]
-        for id in topo {
-            guard let node = graph.nodes[id] else { continue }
-            guard node.kind == .model || node.kind == .snapshot else { continue }
-            let parentLayers = graph.parents(of: id).compactMap { pid -> Int? in
-                guard let pk = graph.nodes[pid]?.kind, pk == .model || pk == .snapshot else { return nil }
-                return modelSubLayer[pid]
-            }
-            modelSubLayer[id] = (parentLayers.max() ?? -1) + 1
+        var layers: [[NodeID]] = Array(repeating: [], count: maxRank + 1)
+        for (id, r) in rank where r >= 0 && r <= maxRank {
+            layers[r].append(id)
         }
-
-        // Assign each node a (band, sub-layer) key. Compact into contiguous layer indices.
-        var keyOf: [NodeID: LayerKey] = [:]
-        keyOf.reserveCapacity(graph.nodes.count)
-        for (id, node) in graph.nodes {
-            keyOf[id] = layerKey(for: node, modelSubLayer: modelSubLayer[id] ?? 0)
-        }
-        let uniqueKeys = Array(Set(keyOf.values)).sorted()
-        var keyToIndex: [LayerKey: Int] = [:]
-        for (i, k) in uniqueKeys.enumerated() {
-            keyToIndex[k] = i
-        }
-
-        let maxLayer = uniqueKeys.count - 1
-        var layers: [[NodeID]] = Array(repeating: [], count: maxLayer + 1)
-        for (id, key) in keyOf {
-            if let idx = keyToIndex[key] { layers[idx].append(id) }
-        }
-        for i in 0...maxLayer {
+        for i in layers.indices {
             layers[i].sort { $0.rawValue < $1.rawValue }
         }
 
-        var positions: [NodeID: CGPoint] = [:]
-        positions.reserveCapacity(graph.nodes.count)
-        var layerY: [CGFloat] = Array(repeating: 0, count: maxLayer + 1)
+        // Canonical frame: cross = x (breadth within a layer), depth = y (layer
+        // progression). Orientation is applied only in finalize().
+        var canonical: [NodeID: CGPoint] = [:]
+        canonical.reserveCapacity(graph.nodes.count)
+        var layerDepths: [CGFloat] = Array(repeating: 0, count: maxRank + 1)
 
-        placeAllLayers(layers: layers, widths: widths, positions: &positions, layerY: &layerY)
+        placeLayers(layers: layers, axis: axis, canonical: &canonical, layerDepths: &layerDepths)
 
         for _ in 0..<crossingIterations {
-            sweepDown(layers: &layers, graph: graph, positions: positions)
-            placeAllLayers(layers: layers, widths: widths, positions: &positions, layerY: &layerY)
-            sweepUp(layers: &layers, graph: graph, positions: positions)
-            placeAllLayers(layers: layers, widths: widths, positions: &positions, layerY: &layerY)
+            sweepDown(layers: &layers, graph: graph, canonical: canonical)
+            placeLayers(layers: layers, axis: axis, canonical: &canonical, layerDepths: &layerDepths)
+            sweepUp(layers: &layers, graph: graph, canonical: canonical)
+            placeLayers(layers: layers, axis: axis, canonical: &canonical, layerDepths: &layerDepths)
         }
 
-        return finalize(positions: positions, widths: widths, layerY: layerY, layerCount: maxLayer + 1)
+        // Position by barycenter (not just order): pulls each node toward its
+        // neighbours instead of evenly centering the layer — kills the "static
+        // grid" feel and aligns dependency chains into clean columns.
+        for _ in 0..<alignmentIterations {
+            alignLayers(layers: layers, graph: graph, axis: axis, downward: true, canonical: &canonical)
+            alignLayers(layers: layers, graph: graph, axis: axis, downward: false, canonical: &canonical)
+        }
+
+        return finalize(
+            canonical: canonical, widths: widths, nodeHeight: nodeHeight,
+            orientation: orientation, layerDepths: layerDepths, layerCount: maxRank + 1
+        )
     }
 
-    nonisolated private struct LayerKey: Hashable, Comparable {
-        let band: Int
-        let sub: Int
-        static func < (l: LayerKey, r: LayerKey) -> Bool {
-            if l.band != r.band { return l.band < r.band }
-            return l.sub < r.sub
+    // MARK: - Axis
+
+    nonisolated private struct Axis {
+        let orientation: LayoutOrientation
+        let widths: [NodeID: CGFloat]
+        let nodeHeight: CGFloat
+
+        // Extent along the in-layer packing axis.
+        func cross(_ id: NodeID) -> CGFloat {
+            switch orientation {
+            case .topToBottom: return widths[id] ?? NodeLabelMetrics.minWidth
+            case .leftToRight: return nodeHeight
+            }
+        }
+
+        // Extent along the layer-progression axis.
+        func depth(_ id: NodeID) -> CGFloat {
+            switch orientation {
+            case .topToBottom: return nodeHeight
+            case .leftToRight: return widths[id] ?? NodeLabelMetrics.minWidth
+            }
         }
     }
 
-    nonisolated private static func layerKey(for node: GraphNode, modelSubLayer: Int) -> LayerKey {
-        switch node.kind {
-        case .source:                   return LayerKey(band: 0, sub: 0)
-        case .seed:                     return LayerKey(band: 1, sub: 0)
-        case .model, .snapshot:         return LayerKey(band: 2, sub: modelSubLayer)
-        case .exposure:                 return LayerKey(band: 3, sub: 0)
-        case .metric, .semanticModel, .savedQuery:
-                                        return LayerKey(band: 3, sub: 1)
-        case .test, .unitTest:          return LayerKey(band: 4, sub: 0)
-        case .unknown:                  return LayerKey(band: 4, sub: 1)
-        }
-    }
+    // MARK: - Placement (canonical: cross = x, depth = y)
 
-    // MARK: - Placement
-
-    nonisolated private static func placeAllLayers(
+    nonisolated private static func placeLayers(
         layers: [[NodeID]],
-        widths: [NodeID: CGFloat],
-        positions: inout [NodeID: CGPoint],
-        layerY: inout [CGFloat]
+        axis: Axis,
+        canonical: inout [NodeID: CGPoint],
+        layerDepths: inout [CGFloat]
     ) {
-        let nodeHeight = NodeLabelMetrics.height
-        let rowStride = nodeHeight + rowSpacing
-
-        var currentTopY: CGFloat = 0
+        var currentDepth: CGFloat = 0
         for i in 0..<layers.count {
             let ids = layers[i]
-            layerY[i] = currentTopY + nodeHeight / 2
+            let lanes = wrapLayer(ids: ids, axis: axis)
+            let maxDepth = ids.map { axis.depth($0) }.max() ?? axis.nodeHeight
+            let laneStride = maxDepth + laneSpacing
 
-            let rows = wrapLayer(ids: ids, widths: widths)
+            layerDepths[i] = currentDepth + maxDepth / 2
 
-            for (r, row) in rows.enumerated() {
-                let rowTotalWidth = row.indices.reduce(CGFloat(0)) { acc, j in
-                    acc + (widths[row[j]] ?? NodeLabelMetrics.minWidth)
-                } + CGFloat(max(0, row.count - 1)) * horizontalSpacing
-                let startX = -rowTotalWidth / 2
-                let rowY = currentTopY + CGFloat(r) * rowStride + nodeHeight / 2
-
-                var x = startX
-                for id in row {
-                    let w = widths[id] ?? NodeLabelMetrics.minWidth
-                    positions[id] = CGPoint(x: x + w / 2, y: rowY)
-                    x += w + horizontalSpacing
+            for (laneIdx, lane) in lanes.enumerated() {
+                let laneTotal = lane.reduce(CGFloat(0)) { $0 + axis.cross($1) }
+                    + CGFloat(max(0, lane.count - 1)) * crossSpacing
+                let laneDepthCenter = currentDepth + CGFloat(laneIdx) * laneStride + maxDepth / 2
+                var c = -laneTotal / 2
+                for id in lane {
+                    let e = axis.cross(id)
+                    canonical[id] = CGPoint(x: c + e / 2, y: laneDepthCenter)
+                    c += e + crossSpacing
                 }
             }
 
-            let rowCount = max(1, rows.count)
-            let layerHeight = CGFloat(rowCount) * nodeHeight + CGFloat(max(0, rowCount - 1)) * rowSpacing
-            currentTopY += layerHeight + verticalSpacing
+            let laneCount = max(1, lanes.count)
+            let span = CGFloat(laneCount) * maxDepth + CGFloat(laneCount - 1) * laneSpacing
+            currentDepth += span + depthSpacing
         }
     }
 
-    nonisolated private static func wrapLayer(
-        ids: [NodeID],
-        widths: [NodeID: CGFloat]
-    ) -> [[NodeID]] {
+    nonisolated private static func wrapLayer(ids: [NodeID], axis: Axis) -> [[NodeID]] {
         guard !ids.isEmpty else { return [[]] }
-        var rows: [[NodeID]] = [[]]
-        var currentWidth: CGFloat = 0
+        var lanes: [[NodeID]] = [[]]
+        var current: CGFloat = 0
         for id in ids {
-            let w = widths[id] ?? NodeLabelMetrics.minWidth
-            let needed = currentWidth == 0 ? w : currentWidth + horizontalSpacing + w
-            if needed > maxRowWidth, let last = rows.last, !last.isEmpty {
-                rows.append([id])
-                currentWidth = w
+            let e = axis.cross(id)
+            let needed = current == 0 ? e : current + crossSpacing + e
+            if needed > maxLaneExtent, let last = lanes.last, !last.isEmpty {
+                lanes.append([id])
+                current = e
             } else {
-                rows[rows.count - 1].append(id)
-                currentWidth = needed
+                lanes[lanes.count - 1].append(id)
+                current = needed
             }
         }
-        return rows
+        return lanes
     }
 
-    // MARK: - Barycenter sweeps
+    // MARK: - Barycenter alignment
+
+    nonisolated private static func alignLayers(
+        layers: [[NodeID]],
+        graph: Graph,
+        axis: Axis,
+        downward: Bool,
+        canonical: inout [NodeID: CGPoint]
+    ) {
+        guard layers.count > 1 else { return }
+        let centroids = folderCentroids(graph: graph, canonical: canonical)
+        let indices = downward ? Array(layers.indices) : Array(layers.indices.reversed())
+
+        for i in indices {
+            let ids = layers[i]
+            guard ids.count > 1 else { continue }
+            // Multi-lane (wrapped) layers stay centered — alignment matters
+            // least there and the geometry is awkward.
+            guard wrapLayer(ids: ids, axis: axis).count == 1 else { continue }
+            guard let depthY = canonical[ids[0]]?.y else { continue }
+
+            var desired: [(id: NodeID, target: CGFloat, half: CGFloat)] = []
+            desired.reserveCapacity(ids.count)
+            for id in ids {
+                let neighbors = downward ? graph.parents(of: id) : graph.children(of: id)
+                let target = combinedBarycenter(
+                    id: id, neighbors: neighbors, graph: graph,
+                    canonical: canonical, centroids: centroids
+                ) ?? canonical[id]?.x ?? 0
+                desired.append((id, target, axis.cross(id) / 2))
+            }
+
+            // Left-to-right de-overlap honouring the desired targets.
+            var placed: [(id: NodeID, x: CGFloat, half: CGFloat)] = []
+            placed.reserveCapacity(desired.count)
+            for d in desired {
+                var x = d.target
+                if let prev = placed.last {
+                    let minX = prev.x + prev.half + crossSpacing + d.half
+                    if x < minX { x = minX }
+                }
+                placed.append((d.id, x, d.half))
+            }
+
+            // Re-center the resolved run on the mean of the desired targets so
+            // the whole layer doesn't drift rightward across iterations.
+            let desiredMean = desired.reduce(CGFloat(0)) { $0 + $1.target } / CGFloat(desired.count)
+            let placedMean = placed.reduce(CGFloat(0)) { $0 + $1.x } / CGFloat(placed.count)
+            let shift = desiredMean - placedMean
+            for p in placed {
+                canonical[p.id] = CGPoint(x: p.x + shift, y: depthY)
+            }
+        }
+    }
+
+    // MARK: - Barycenter ordering sweeps
 
     nonisolated private static func sweepDown(
         layers: inout [[NodeID]],
         graph: Graph,
-        positions: [NodeID: CGPoint]
+        canonical: [NodeID: CGPoint]
     ) {
         guard layers.count > 1 else { return }
-        let centroids = folderCentroids(graph: graph, positions: positions)
+        let centroids = folderCentroids(graph: graph, canonical: canonical)
         for i in 1..<layers.count {
-            var bary: [NodeID: CGFloat] = [:]
-            bary.reserveCapacity(layers[i].count)
-            for id in layers[i] {
-                bary[id] = combinedBarycenter(
-                    id: id,
-                    neighbors: graph.parents(of: id),
-                    graph: graph,
-                    positions: positions,
-                    centroids: centroids
-                )
-            }
-            layers[i].sort { a, b in
-                let aB = bary[a] ?? .greatestFiniteMagnitude
-                let bB = bary[b] ?? .greatestFiniteMagnitude
-                if aB != bB { return aB < bB }
-                return a.rawValue < b.rawValue
-            }
+            sortLayer(&layers[i], graph: graph, canonical: canonical, centroids: centroids, useParents: true)
         }
     }
 
     nonisolated private static func sweepUp(
         layers: inout [[NodeID]],
         graph: Graph,
-        positions: [NodeID: CGPoint]
+        canonical: [NodeID: CGPoint]
     ) {
         guard layers.count > 1 else { return }
-        let centroids = folderCentroids(graph: graph, positions: positions)
+        let centroids = folderCentroids(graph: graph, canonical: canonical)
         for i in (0..<(layers.count - 1)).reversed() {
-            var bary: [NodeID: CGFloat] = [:]
-            bary.reserveCapacity(layers[i].count)
-            for id in layers[i] {
-                bary[id] = combinedBarycenter(
-                    id: id,
-                    neighbors: graph.children(of: id),
-                    graph: graph,
-                    positions: positions,
-                    centroids: centroids
-                )
-            }
-            layers[i].sort { a, b in
-                let aB = bary[a] ?? .greatestFiniteMagnitude
-                let bB = bary[b] ?? .greatestFiniteMagnitude
-                if aB != bB { return aB < bB }
-                return a.rawValue < b.rawValue
-            }
+            sortLayer(&layers[i], graph: graph, canonical: canonical, centroids: centroids, useParents: false)
+        }
+    }
+
+    nonisolated private static func sortLayer(
+        _ layer: inout [NodeID],
+        graph: Graph,
+        canonical: [NodeID: CGPoint],
+        centroids: [String: CGFloat],
+        useParents: Bool
+    ) {
+        var bary: [NodeID: CGFloat] = [:]
+        bary.reserveCapacity(layer.count)
+        for id in layer {
+            let neighbors = useParents ? graph.parents(of: id) : graph.children(of: id)
+            bary[id] = combinedBarycenter(
+                id: id, neighbors: neighbors, graph: graph,
+                canonical: canonical, centroids: centroids
+            ) ?? .greatestFiniteMagnitude
+        }
+        layer.sort { a, b in
+            let aB = bary[a] ?? .greatestFiniteMagnitude
+            let bB = bary[b] ?? .greatestFiniteMagnitude
+            if aB != bB { return aB < bB }
+            return a.rawValue < b.rawValue
         }
     }
 
@@ -239,23 +283,30 @@ enum LayeredLayout {
         id: NodeID,
         neighbors: [NodeID],
         graph: Graph,
-        positions: [NodeID: CGPoint],
+        canonical: [NodeID: CGPoint],
         centroids: [String: CGFloat]
-    ) -> CGFloat {
-        let depBary = barycenter(of: neighbors, positions: positions)
+    ) -> CGFloat? {
+        let depBary = barycenter(of: neighbors, canonical: canonical)
         let folderBary: CGFloat? = graph.nodes[id].flatMap { folderPull(for: $0, centroids: centroids) }
-        let hasDep = depBary != .greatestFiniteMagnitude
-        switch (hasDep, folderBary) {
-        case (true, let f?):
-            return depBary * (1 - folderCohesionWeight) + f * folderCohesionWeight
-        case (true, nil):
-            return depBary
-        case (false, let f?):
+        switch (depBary, folderBary) {
+        case (let d?, let f?):
+            return d * (1 - folderCohesionWeight) + f * folderCohesionWeight
+        case (let d?, nil):
+            return d
+        case (nil, let f?):
             return f
-        case (false, nil):
-            return .greatestFiniteMagnitude
+        case (nil, nil):
+            return nil
         }
     }
+
+    nonisolated private static func barycenter(of neighbors: [NodeID], canonical: [NodeID: CGPoint]) -> CGFloat? {
+        let xs = neighbors.compactMap { canonical[$0]?.x }
+        guard !xs.isEmpty else { return nil }
+        return xs.reduce(0, +) / CGFloat(xs.count)
+    }
+
+    // MARK: - Folder cohesion
 
     nonisolated private static func folderPath(of node: GraphNode) -> String? {
         guard node.kind == .model || node.kind == .snapshot else { return nil }
@@ -267,11 +318,11 @@ enum LayeredLayout {
 
     nonisolated private static func folderCentroids(
         graph: Graph,
-        positions: [NodeID: CGPoint]
+        canonical: [NodeID: CGPoint]
     ) -> [String: CGFloat] {
         var sums: [String: (sum: CGFloat, count: Int)] = [:]
         for (id, node) in graph.nodes {
-            guard let path = folderPath(of: node), let pos = positions[id] else { continue }
+            guard let path = folderPath(of: node), let pos = canonical[id] else { continue }
             var current: String? = path
             while let cur = current {
                 var entry = sums[cur, default: (0, 0)]
@@ -318,21 +369,25 @@ enum LayeredLayout {
         return sum / totalWeight
     }
 
-    nonisolated private static func barycenter(of neighbors: [NodeID], positions: [NodeID: CGPoint]) -> CGFloat {
-        let xs = neighbors.compactMap { positions[$0]?.x }
-        guard !xs.isEmpty else { return .greatestFiniteMagnitude }
-        return xs.reduce(0, +) / CGFloat(xs.count)
-    }
-
-    // MARK: - Finalize
+    // MARK: - Finalize (canonical → oriented)
 
     nonisolated private static func finalize(
-        positions: [NodeID: CGPoint],
+        canonical: [NodeID: CGPoint],
         widths: [NodeID: CGFloat],
-        layerY: [CGFloat],
+        nodeHeight: CGFloat,
+        orientation: LayoutOrientation,
+        layerDepths: [CGFloat],
         layerCount: Int
     ) -> GraphLayout {
-        let nodeHeight = NodeLabelMetrics.height
+        var positions: [NodeID: CGPoint] = [:]
+        positions.reserveCapacity(canonical.count)
+        for (id, c) in canonical {
+            switch orientation {
+            case .topToBottom: positions[id] = c
+            case .leftToRight: positions[id] = CGPoint(x: c.y, y: c.x)
+            }
+        }
+
         var minX = CGFloat.greatestFiniteMagnitude
         var maxX = -CGFloat.greatestFiniteMagnitude
         var minY = CGFloat.greatestFiniteMagnitude
@@ -349,8 +404,9 @@ enum LayeredLayout {
             positions: positions,
             widths: widths,
             nodeHeight: nodeHeight,
+            orientation: orientation,
             layerCount: layerCount,
-            layerY: layerY,
+            layerDepths: layerDepths,
             bounds: bounds
         )
     }

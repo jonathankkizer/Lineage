@@ -20,6 +20,7 @@ import AppKit
     func toggleInspector(_ sender: Any?)
     func toggleShowAllEdges(_ sender: Any?)
     func toggleCriticalPath(_ sender: Any?)
+    func selectLayout(_ sender: Any?)
 
     // Filters
     func toggleShowTests(_ sender: Any?)

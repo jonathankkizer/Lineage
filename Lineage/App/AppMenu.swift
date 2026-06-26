@@ -128,6 +128,17 @@ enum AppMenu {
         menu.addItem(criticalPath)
         menu.addItem(.separator())
 
+        let layoutItem = NSMenuItem(title: "Layout", action: nil, keyEquivalent: "")
+        let layoutMenu = NSMenu(title: "Layout")
+        for algorithm in GraphLayoutAlgorithm.allCases.sorted(by: { $0.segmentIndex < $1.segmentIndex }) {
+            let entry = NSMenuItem(title: algorithm.displayName, action: #selector(LineageActions.selectLayout(_:)), keyEquivalent: "")
+            entry.tag = algorithm.segmentIndex
+            layoutMenu.addItem(entry)
+        }
+        layoutItem.submenu = layoutMenu
+        menu.addItem(layoutItem)
+        menu.addItem(.separator())
+
         let showItem = NSMenuItem(title: "Show", action: nil, keyEquivalent: "")
         let showMenu = NSMenu(title: "Show")
         showMenu.addItem(withTitle: "Tests", action: #selector(LineageActions.toggleShowTests(_:)), keyEquivalent: "")

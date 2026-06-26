@@ -125,6 +125,22 @@ final class GraphView: NSView, NSMenuItemValidation {
         zoomToFit()
     }
 
+    /// Animate to a new layout for the same node set (layout-algorithm switch).
+    /// Morphs node positions + edges, then reframes the viewport in step.
+    func transitionLayout(to layout: GraphLayout, animationDuration: CFTimeInterval) {
+        guard hasContent, currentGraph != nil else { return }
+        currentLayout = layout
+        renderer.setLayout(layout, animationDuration: animationDuration)
+        // focusBounds() returns the focused region when a focus is active, or
+        // the full content bounds otherwise — reframe to whichever applies.
+        let target = renderer.focusBounds()
+        if target.width > 0, target.height > 0 {
+            let padding: CGFloat = visibleNodes == nil ? 24 : 48
+            viewport = Viewport.fitting(target, in: bounds, padding: padding)
+            applyViewport(animationDuration: animationDuration)
+        }
+    }
+
     func setVisibleNodes(_ nodes: Set<NodeID>?) {
         visibleNodes = nodes
     }

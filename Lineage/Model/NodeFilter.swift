@@ -14,7 +14,7 @@ nonisolated enum FilterScope: Equatable, Hashable, Sendable {
     }
 }
 
-nonisolated struct NodeFilter: Equatable, Sendable {
+nonisolated struct NodeFilter: Equatable, Hashable, Sendable {
     var showTests: Bool
     var showSources: Bool
     var showOrphanSources: Bool
