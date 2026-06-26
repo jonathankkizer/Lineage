@@ -45,10 +45,11 @@ final class CALayerGraphRenderer: GraphRenderer {
     private enum LODBucket: Int { case detail, blocks }
     private var lastLOD: LODBucket = .detail
     private var zoomScale: CGFloat = 1
+    private var tilesShown = false
     private static let blocksThreshold: CGFloat = 0.42   // chips → blocks
     private static let edgeFadeFloor: CGFloat = 0.12     // edges fully gone below this
-    private static let tileFadeStart: CGFloat = 0.42     // tiles begin fading in below this
-    private static let tileFadeEnd: CGFloat = 0.18       // tiles fully opaque at/below this
+    private static let tileThreshold: CGFloat = 0.28     // tiles snap in below this
+    private static let tileCrossfade: CFTimeInterval = 0.18
 
     init() {
         rootLayer = CALayer()
@@ -205,30 +206,39 @@ final class CALayerGraphRenderer: GraphRenderer {
         applyNodeTier()
     }
 
-    /// Continuous, per-frame: edges fade out and folder territory tiles fade in
-    /// as you zoom out. Nodes always stay visible — the tiles sit *behind* them
-    /// as a guide to which areas of the project to explore.
+    /// Edges fade out *continuously* as you zoom out (kills the haze smoothly).
+    /// Territory tiles, by contrast, *snap* in/out at a threshold with a quick
+    /// crossfade — tying their opacity to raw zoom left a stable, half-faded
+    /// "between" state that looked unresolved.
     private func updateOverviewLayers() {
         let edgeOpacity = Self.edgeOpacityRamp(zoomScale)
-        let tileOpacity = (layout?.clusters.isEmpty ?? true) ? 0 : Self.tileOpacityRamp(zoomScale)
-
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         let edgesVisible = bulkEdgesEnabled && edgeOpacity > 0.001
         if edgeLayer.isHidden == edgesVisible { edgeLayer.isHidden = !edgesVisible }
         if edgeLayer.opacity != edgeOpacity { edgeLayer.opacity = edgeOpacity }
-        if regionContainerLayer.opacity != tileOpacity { regionContainerLayer.opacity = tileOpacity }
-        if regionLabelLayer.opacity != tileOpacity { regionLabelLayer.opacity = tileOpacity }
+        CATransaction.commit()
+
+        let shouldShowTiles = !(layout?.clusters.isEmpty ?? true) && zoomScale < Self.tileThreshold
+        guard shouldShowTiles != tilesShown else { return }
+        tilesShown = shouldShowTiles
+
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        CATransaction.begin()
+        if reduceMotion {
+            CATransaction.setDisableActions(true)
+        } else {
+            CATransaction.setAnimationDuration(Self.tileCrossfade)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
+        }
+        let target: Float = shouldShowTiles ? 1 : 0
+        regionContainerLayer.opacity = target
+        regionLabelLayer.opacity = target
         CATransaction.commit()
     }
 
     private static func edgeOpacityRamp(_ scale: CGFloat) -> Float {
         Float(max(0, min(1, (scale - edgeFadeFloor) / (blocksThreshold - edgeFadeFloor))))
-    }
-
-    private static func tileOpacityRamp(_ scale: CGFloat) -> Float {
-        // 0 at/above the detail threshold, full once well zoomed out.
-        Float(max(0, min(1, (tileFadeStart - scale) / (tileFadeStart - tileFadeEnd))))
     }
 
     /// Switch the node resting appearance between detail chips and solid blocks.
