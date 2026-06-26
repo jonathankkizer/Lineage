@@ -28,6 +28,8 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     private var coloringMode: NodeColoring = .kind
     private weak var coloringSegmented: NSSegmentedControl?
 
+    private weak var layoutSegmented: NSSegmentedControl?
+
     private var criticalPathActive: Bool = false
     private weak var criticalPathButton: NSButton?
 
@@ -35,6 +37,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     nonisolated private static let searchID = NSToolbarItem.Identifier("search")
     nonisolated private static let filterID = NSToolbarItem.Identifier("filter")
     nonisolated private static let coloringID = NSToolbarItem.Identifier("coloring")
+    nonisolated private static let layoutID = NSToolbarItem.Identifier("layout")
     nonisolated private static let criticalPathID = NSToolbarItem.Identifier("critical-path")
     nonisolated private static let toggleInspectorID = NSToolbarItem.Identifier("toggle-inspector")
 
@@ -206,6 +209,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         graphView.install(graph: graph, layout: layout)
         graphView.setBuildTimings(document.buildTimings)
         graphView.setColoring(coloringMode)
+        layoutSegmented?.selectedSegment = document.layoutAlgorithm.segmentIndex
         graphView.resetBulkEdgesToAuto()
         inspectorView.documentDidLoad(graph: graph)
 
@@ -235,11 +239,11 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     // MARK: - Toolbar
 
     nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.coloringID, Self.criticalPathID, .flexibleSpace, Self.searchID, .flexibleSpace, Self.toggleInspectorID]
+        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.layoutID, Self.filterID, Self.coloringID, Self.criticalPathID, .flexibleSpace, Self.searchID, .flexibleSpace, Self.toggleInspectorID]
     }
 
     nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.filterID, Self.coloringID, Self.criticalPathID, Self.searchID, Self.toggleInspectorID, .flexibleSpace, .space]
+        [.toggleSidebar, .sidebarTrackingSeparator, Self.zoomToFitID, Self.layoutID, Self.filterID, Self.coloringID, Self.criticalPathID, Self.searchID, Self.toggleInspectorID, .flexibleSpace, .space]
     }
 
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
@@ -341,6 +345,29 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             item.toolTip = "Color nodes by kind or by build time"
             return item
 
+        case Self.layoutID:
+            let labels = GraphLayoutAlgorithm.allCases
+                .sorted { $0.segmentIndex < $1.segmentIndex }
+                .map(\.displayName)
+            let segmented = NSSegmentedControl(labels: labels, trackingMode: .selectOne, target: self, action: #selector(layoutSegmentedChanged(_:)))
+            segmented.segmentStyle = .texturedRounded
+            segmented.selectedSegment = (projectDocument?.layoutAlgorithm ?? .flow).segmentIndex
+            for algorithm in GraphLayoutAlgorithm.allCases {
+                segmented.setToolTip(algorithm.toolTip, forSegment: algorithm.segmentIndex)
+            }
+            segmented.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                segmented.heightAnchor.constraint(equalToConstant: 26),
+            ])
+            layoutSegmented = segmented
+
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            item.view = segmented
+            item.label = "Layout"
+            item.paletteLabel = "Layout"
+            item.toolTip = "Switch graph layout"
+            return item
+
         default:
             return nil
         }
@@ -369,6 +396,32 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         coloringMode = mode
         coloringSegmented?.selectedSegment = mode.rawValue
         graphView.setColoring(mode)
+    }
+
+    // MARK: - Layout
+
+    @objc private func layoutSegmentedChanged(_ sender: NSSegmentedControl) {
+        applyLayoutAlgorithm(GraphLayoutAlgorithm(segmentIndex: sender.selectedSegment))
+    }
+
+    @objc func selectLayout(_ sender: Any?) {
+        guard let item = sender as? NSMenuItem else { return }
+        applyLayoutAlgorithm(GraphLayoutAlgorithm(segmentIndex: item.tag))
+    }
+
+    private func applyLayoutAlgorithm(_ algorithm: GraphLayoutAlgorithm) {
+        layoutSegmented?.selectedSegment = algorithm.segmentIndex
+        projectDocument?.setLayoutAlgorithm(algorithm)
+    }
+
+    func didChangeLayout(_ layout: GraphLayout) {
+        layoutSegmented?.selectedSegment = (projectDocument?.layoutAlgorithm ?? .flow).segmentIndex
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        let duration: CFTimeInterval = reduceMotion ? 0 : 0.45
+        // The renderer reuses the existing node layers, so focus dimming and
+        // selection survive the transition — no need to re-apply focus (which
+        // would snap the edge morph). Just morph + reframe.
+        graphView.transitionLayout(to: layout, animationDuration: duration)
     }
 
     // MARK: - Reload
@@ -733,6 +786,10 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             let available = projectDocument?.criticalPath != nil
             menuItem.state = (available && criticalPathActive) ? .on : .off
             return available
+        case #selector(selectLayout(_:)):
+            let current = projectDocument?.layoutAlgorithm ?? .flow
+            menuItem.state = (menuItem.tag == current.segmentIndex) ? .on : .off
+            return projectDocument?.graph != nil
         default:
             return true
         }

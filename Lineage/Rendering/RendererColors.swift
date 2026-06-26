@@ -107,6 +107,44 @@ enum RendererColors {
         untimedChipFill(for: kind)
     }
 
+    // Semantic-zoom overview: solid color blocks (mid zoom) and folder
+    // territory tiles (lowest zoom).
+    static func blockFill(for kind: ResourceKind) -> NSColor {
+        kindColor(for: kind).withAlphaComponent(0.90)
+    }
+
+    static var untimedBlock: NSColor {
+        NSColor.tertiaryLabelColor
+    }
+
+    // Territories are neutral "group boxes" (NSBox / Finder-section idiom) — a
+    // whisper of fill + a hairline border. The kind-colored nodes carry the
+    // color; the territory defers. No per-folder rainbow.
+    static var regionFill: NSColor {
+        NSColor.labelColor.withAlphaComponent(0.035)
+    }
+
+    static var regionBorder: NSColor {
+        .separatorColor
+    }
+
+    static var regionLabelName: NSColor {
+        .labelColor
+    }
+
+    static var regionLabelCount: NSColor {
+        .tertiaryLabelColor
+    }
+
+    // Subtle material chip behind a territory's top-left header label.
+    static var regionLabelPlate: NSColor {
+        NSColor.windowBackgroundColor.withAlphaComponent(0.82)
+    }
+
+    static var regionLabelPlateBorder: NSColor {
+        NSColor.separatorColor.withAlphaComponent(0.6)
+    }
+
     static var selection: NSColor { .controlAccentColor }
     static var hover: NSColor { NSColor.controlAccentColor.withAlphaComponent(0.5) }
 

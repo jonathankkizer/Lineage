@@ -18,10 +18,12 @@ class DbtProjectDocument: NSDocument {
     @MainActor private(set) var criticalPath: CriticalPath?
     @MainActor private(set) var loadError: Error?
     @MainActor private(set) var nodeFilter: NodeFilter = .default
+    @MainActor private(set) var layoutAlgorithm: GraphLayoutAlgorithm = LayoutPreference.algorithm
 
     @MainActor private var loadingTask: Task<Void, Never>?
     @MainActor private var refilterTask: Task<Void, Never>?
     @MainActor private var pendingFilterTask: Task<Void, Never>?
+    @MainActor private var relayoutTask: Task<Void, Never>?
     @MainActor private static let filterDebounce: Duration = .milliseconds(250)
 
     nonisolated override func read(from url: URL, ofType typeName: String) throws {
@@ -82,7 +84,7 @@ class DbtProjectDocument: NSDocument {
             let manifest = try await Self.parse(url: manifestURL)
             let full = await Self.buildGraph(from: manifest)
             let filtered = await Self.applyFilter(graph: full, filter: nodeFilter)
-            let layout = await Self.computeLayout(graph: filtered)
+            let layout = await Self.computeLayout(graph: filtered, algorithm: layoutAlgorithm, filter: nodeFilter)
             let timings = await Self.loadBuildTimings(url: runResultsURL)
             let cp = await Self.computeCriticalPath(graph: full, timings: timings)
             self.fullGraph = full
@@ -108,6 +110,8 @@ class DbtProjectDocument: NSDocument {
     func reload() {
         loadingTask?.cancel()
         refilterTask?.cancel()
+        relayoutTask?.cancel()
+        Task { await LayoutCache.shared.clear() }
         loadingTask = Task { [weak self] in
             await self?.loadInBackground()
         }
@@ -138,11 +142,34 @@ class DbtProjectDocument: NSDocument {
             guard let self else { return }
             controller.willRefilter(filter: appliedFilter)
             let filtered = await Self.applyFilter(graph: full, filter: appliedFilter)
-            let layout = await Self.computeLayout(graph: filtered)
+            let layout = await Self.computeLayout(graph: filtered, algorithm: self.layoutAlgorithm, filter: appliedFilter)
             if Task.isCancelled { return }
             self.graph = filtered
             self.graphLayout = layout
             controller.didRefilter()
+        }
+    }
+
+    /// Switch layout algorithm without re-filtering: recompute the layout for
+    /// the current (in-memory) filtered graph — same node set — then hand it to
+    /// the controller for an animated transition.
+    @MainActor
+    func setLayoutAlgorithm(_ algorithm: GraphLayoutAlgorithm) {
+        guard algorithm != layoutAlgorithm else { return }
+        layoutAlgorithm = algorithm
+        LayoutPreference.algorithm = algorithm
+
+        guard let filtered = graph else { return }
+        guard let controller = windowControllers.first as? ProjectWindowController else { return }
+        let appliedFilter = nodeFilter
+
+        relayoutTask?.cancel()
+        relayoutTask = Task { [weak self] in
+            guard let self else { return }
+            let layout = await Self.computeLayout(graph: filtered, algorithm: algorithm, filter: appliedFilter)
+            if Task.isCancelled { return }
+            self.graphLayout = layout
+            controller.didChangeLayout(layout)
         }
     }
 
@@ -169,10 +196,13 @@ class DbtProjectDocument: NSDocument {
         }.value
     }
 
-    private static func computeLayout(graph: Graph) async -> GraphLayout {
-        await Task.detached(priority: .userInitiated) {
-            LayeredLayout.compute(graph: graph)
-        }.value
+    private static func computeLayout(graph: Graph, algorithm: GraphLayoutAlgorithm, filter: NodeFilter) async -> GraphLayout {
+        let key = LayoutCacheKey(invocationID: graph.invocationID, algorithm: algorithm, filter: filter)
+        return await LayoutCache.shared.layout(key: key) {
+            await Task.detached(priority: .userInitiated) {
+                algorithm.compute(graph: graph)
+            }.value
+        }
     }
 
     private static func computeCriticalPath(graph: Graph, timings: BuildTimings) async -> CriticalPath? {

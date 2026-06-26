@@ -6,6 +6,7 @@ protocol GraphRenderer: AnyObject {
     var contentBounds: CGRect { get }
 
     func install(graph: Graph, layout: GraphLayout)
+    func setLayout(_ layout: GraphLayout, animationDuration: CFTimeInterval)
     func setViewport(_ transform: CGAffineTransform, animationDuration: CFTimeInterval)
     func setLevelOfDetail(zoomScale: CGFloat)
 

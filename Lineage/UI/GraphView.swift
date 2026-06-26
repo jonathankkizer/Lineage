@@ -26,6 +26,7 @@ final class GraphView: NSView, NSMenuItemValidation {
 
     private var viewport: Viewport = .identity
     private var hasContent = false
+    private var needsInitialFit = false
     private var trackingArea: NSTrackingArea?
     private var magnifyRecognizer: NSMagnificationGestureRecognizer!
     private var contextMenuNode: NodeID?
@@ -78,6 +79,7 @@ final class GraphView: NSView, NSMenuItemValidation {
     override func layout() {
         super.layout()
         renderer.rootLayer.frame = bounds
+        if needsInitialFit { zoomToFit() }
     }
 
     override func viewDidChangeBackingProperties() {
@@ -122,7 +124,23 @@ final class GraphView: NSView, NSMenuItemValidation {
         visibleNodes = nil
         renderer.install(graph: graph, layout: layout)
         hasContent = true
-        zoomToFit()
+        zoomToFit()  // arms a deferred fit if the view isn't laid out yet
+    }
+
+    /// Animate to a new layout for the same node set (layout-algorithm switch).
+    /// Morphs node positions + edges, then reframes the viewport in step.
+    func transitionLayout(to layout: GraphLayout, animationDuration: CFTimeInterval) {
+        guard hasContent, currentGraph != nil else { return }
+        currentLayout = layout
+        renderer.setLayout(layout, animationDuration: animationDuration)
+        // focusBounds() returns the focused region when a focus is active, or
+        // the full content bounds otherwise — reframe to whichever applies.
+        let target = renderer.focusBounds()
+        if target.width > 0, target.height > 0 {
+            let padding: CGFloat = visibleNodes == nil ? 24 : 48
+            viewport = Viewport.fitting(target, in: bounds, padding: padding)
+            applyViewport(animationDuration: animationDuration)
+        }
     }
 
     func setVisibleNodes(_ nodes: Set<NodeID>?) {
@@ -131,6 +149,14 @@ final class GraphView: NSView, NSMenuItemValidation {
 
     func zoomToFit() {
         guard hasContent else { return }
+        // If the view hasn't been laid out to its real size yet, fitting would
+        // center against zero/stale bounds (project ends up tiny in the corner).
+        // Defer to the next layout() pass instead.
+        guard bounds.width > 0, bounds.height > 0 else {
+            needsInitialFit = true
+            return
+        }
+        needsInitialFit = false
         viewport = Viewport.fitting(renderer.contentBounds, in: bounds)
         applyViewport()
     }
