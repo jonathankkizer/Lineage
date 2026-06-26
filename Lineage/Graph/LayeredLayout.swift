@@ -6,6 +6,15 @@ nonisolated enum LayoutOrientation: Sendable {
     case leftToRight
 }
 
+/// A spatial neighbourhood emitted by the Grouped layout. Used by the renderer
+/// to draw folder territory tiles at the lowest zoom tier (semantic zoom).
+nonisolated struct LayoutCluster: Sendable {
+    let label: String
+    let path: String
+    let bounds: CGRect
+    let nodeCount: Int
+}
+
 nonisolated struct GraphLayout: Sendable {
     let positions: [NodeID: CGPoint]
     let widths: [NodeID: CGFloat]
@@ -13,11 +22,12 @@ nonisolated struct GraphLayout: Sendable {
     let orientation: LayoutOrientation
     let layerCount: Int
     let layerDepths: [CGFloat]
+    let clusters: [LayoutCluster]
     let bounds: CGRect
 
     static let empty = GraphLayout(
         positions: [:], widths: [:], nodeHeight: 0, orientation: .leftToRight,
-        layerCount: 0, layerDepths: [], bounds: .zero
+        layerCount: 0, layerDepths: [], clusters: [], bounds: .zero
     )
 
     func width(for id: NodeID) -> CGFloat {
@@ -407,6 +417,7 @@ enum LayeredLayout {
             orientation: orientation,
             layerCount: layerCount,
             layerDepths: layerDepths,
+            clusters: [],
             bounds: bounds
         )
     }

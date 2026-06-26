@@ -12,6 +12,7 @@ final class CALayerGraphRenderer: GraphRenderer {
     private let edgeUpstreamLayer = CAShapeLayer()
     private let edgeDownstreamLayer = CAShapeLayer()
     private let nodeContainerLayer = CALayer()
+    private let regionContainerLayer = CALayer()
     private let selectionRingLayer = CAShapeLayer()
     private let marqueeLayer = CAShapeLayer()
 
@@ -37,8 +38,12 @@ final class CALayerGraphRenderer: GraphRenderer {
     static let unfocusedOpacity: Float = 0.07
     static let bulkEdgeRenderCap = 800
 
-    private enum LODBucket: Int { case full, noLabels, overview }
-    private var lastLOD: LODBucket = .full
+    // Semantic-zoom tiers: detail (chips + labels), blocks (solid color blocks),
+    // regions (folder territory tiles). Thresholds are on viewport.scale.
+    private enum LODBucket: Int { case detail, blocks, regions }
+    private var lastLOD: LODBucket = .detail
+    private static let blocksThreshold: CGFloat = 0.5
+    private static let regionsThreshold: CGFloat = 0.25
 
     init() {
         rootLayer = CALayer()
@@ -74,6 +79,8 @@ final class CALayerGraphRenderer: GraphRenderer {
         marqueeLayer.strokeColor = RendererColors.selection.cgColor
         marqueeLayer.lineWidth = 1
 
+        regionContainerLayer.opacity = 0
+        contentLayer.addSublayer(regionContainerLayer)
         contentLayer.addSublayer(edgeLayer)
         contentLayer.addSublayer(edgeUpstreamLayer)
         contentLayer.addSublayer(edgeDownstreamLayer)
@@ -93,6 +100,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         }
         labelCache.clear()
         rebuildLabels()
+        rebuildRegionTiles()
     }
 
     func install(graph: Graph, layout: GraphLayout) {
@@ -128,8 +136,10 @@ final class CALayerGraphRenderer: GraphRenderer {
         totalEdgeCount = graph.forward.values.reduce(0) { $0 + $1.count }
 
         rebuildEdgePath()
+        rebuildRegionTiles()
         applyBulkEdgeVisibility()
         rebuildHighlights()
+        applyTierContainers(animated: false)
     }
 
     /// Animate to a new layout for the SAME node set (e.g. switching layout
@@ -162,8 +172,10 @@ final class CALayerGraphRenderer: GraphRenderer {
         edgeLayer.path = buildEdgePath()
         CATransaction.commit()
 
+        rebuildRegionTiles()
         applyBulkEdgeVisibility()
         rebuildHighlights()
+        applyTierContainers(animated: animationDuration > 0)
     }
 
     func setViewport(_ transform: CGAffineTransform, animationDuration: CFTimeInterval) {
@@ -179,28 +191,48 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     func setLevelOfDetail(zoomScale: CGFloat) {
+        // Continuous edge fade — runs every frame so edges dissolve smoothly as
+        // you zoom out instead of a flat haze at fit.
+        let targetEdgeOpacity = Self.edgeOpacityRamp(zoomScale)
+        if edgeLayer.opacity != targetEdgeOpacity {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            edgeLayer.opacity = targetEdgeOpacity
+            CATransaction.commit()
+        }
+
         let bucket: LODBucket
-        if zoomScale < 0.2 { bucket = .overview }
-        else if zoomScale < 0.5 { bucket = .noLabels }
-        else { bucket = .full }
+        if zoomScale < Self.regionsThreshold { bucket = .regions }
+        else if zoomScale < Self.blocksThreshold { bucket = .blocks }
+        else { bucket = .detail }
 
         guard bucket != lastLOD else { return }
         lastLOD = bucket
+        applyTier()
+    }
 
+    private static func edgeOpacityRamp(_ scale: CGFloat) -> Float {
+        let lo: CGFloat = 0.12, hi: CGFloat = blocksThreshold
+        let t = max(0, min(1, (scale - lo) / (hi - lo)))
+        return Float(t)
+    }
+
+    /// Apply the current tier's resting node appearance, then cross-fade the
+    /// region tiles vs. nodes/edges. Selection/hover overrides are re-layered by
+    /// rebuildHighlights().
+    private func applyTier() {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        defer { CATransaction.commit() }
-
-        let showLabels = (bucket == .full)
-        let nonOverview = (bucket != .overview)
-
-        applyBulkEdgeVisibility()
-        edgeUpstreamLayer.isHidden = !nonOverview
-        edgeDownstreamLayer.isHidden = !nonOverview
-
         for (id, layer) in nodeLayers {
             layer.isHidden = false
-            if showLabels {
+            guard let kind = graph?.nodes[id]?.kind else { continue }
+            let s = baseStyle(id: id, kind: kind)
+            if !currentSelection.contains(id) {
+                layer.backgroundColor = s.fill
+            }
+            layer.borderColor = s.border
+            layer.borderWidth = s.borderWidth
+            if s.showLabel {
                 if layer.contents == nil, let node = graph?.nodes[id], let layout {
                     let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
                     layer.contents = nodeImage(node: node, size: size, selected: currentSelection.contains(id))
@@ -209,6 +241,31 @@ final class CALayerGraphRenderer: GraphRenderer {
                 layer.contents = nil
             }
         }
+        CATransaction.commit()
+
+        applyBulkEdgeVisibility()
+        rebuildHighlights()
+        applyTierContainers(animated: true)
+    }
+
+    private func applyTierContainers(animated: Bool) {
+        let hasClusters = !(layout?.clusters.isEmpty ?? true)
+        let regionsActive = (lastLOD == .regions) && hasClusters
+
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        CATransaction.begin()
+        if animated && !reduceMotion {
+            CATransaction.setAnimationDuration(0.22)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
+        } else {
+            CATransaction.setDisableActions(true)
+        }
+        regionContainerLayer.opacity = regionsActive ? 1 : 0
+        nodeContainerLayer.opacity = regionsActive ? 0 : 1
+        let hideHighlightEdges = (lastLOD == .regions)
+        edgeUpstreamLayer.isHidden = hideHighlightEdges
+        edgeDownstreamLayer.isHidden = hideHighlightEdges
+        CATransaction.commit()
     }
 
     func setSelection(_ ids: Set<NodeID>, primary: NodeID?) {
@@ -271,6 +328,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         marqueeLayer.strokeColor = RendererColors.selection.cgColor
 
         reapplyNodeColors()
+        rebuildRegionTiles()
 
         labelCache.clear()
         rebuildLabels()
@@ -314,7 +372,7 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     private func applyBulkEdgeVisibility() {
-        let shouldShow = bulkEdgesEnabled && lastLOD != .overview
+        let shouldShow = bulkEdgesEnabled && lastLOD != .regions
         guard edgeLayer.isHidden == shouldShow else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -326,15 +384,95 @@ final class CALayerGraphRenderer: GraphRenderer {
         guard let graph else { return }
         for (id, layer) in nodeLayers {
             guard let node = graph.nodes[id] else { continue }
-            let style = resolveChipStyle(id: id, kind: node.kind)
-            layer.backgroundColor = style.fill.cgColor
-            layer.borderColor = style.border.cgColor
+            guard !currentSelection.contains(id) else { continue }
+            let s = baseStyle(id: id, kind: node.kind)
+            layer.backgroundColor = s.fill
+            layer.borderColor = s.border
+            layer.borderWidth = s.borderWidth
         }
     }
 
     private struct ChipStyle {
         let fill: NSColor
         let border: NSColor
+    }
+
+    private struct BaseStyle {
+        let fill: CGColor
+        let border: CGColor
+        let borderWidth: CGFloat
+        let showLabel: Bool
+    }
+
+    /// A node's resting appearance for the current zoom tier and Color By mode.
+    /// Selection/hover/focus-neighbour overrides are applied on top by
+    /// rebuildHighlights().
+    private func baseStyle(id: NodeID, kind: ResourceKind) -> BaseStyle {
+        switch lastLOD {
+        case .detail:
+            let s = resolveChipStyle(id: id, kind: kind)
+            return BaseStyle(fill: s.fill.cgColor, border: s.border.cgColor, borderWidth: 1, showLabel: true)
+        case .blocks, .regions:
+            return BaseStyle(fill: solidColor(id: id, kind: kind).cgColor, border: NSColor.clear.cgColor, borderWidth: 0, showLabel: false)
+        }
+    }
+
+    /// Saturated overview color used for the solid blocks at low zoom.
+    private func solidColor(id: NodeID, kind: ResourceKind) -> NSColor {
+        switch coloringMode {
+        case .kind:
+            return RendererColors.blockFill(for: kind)
+        case .buildTime:
+            if let p = buildTimings.colorScore[id] {
+                return RendererColors.buildTimeColor(score: p)
+            }
+            return RendererColors.untimedBlock
+        }
+    }
+
+    // MARK: - Region tiles (folder neighbourhoods, lowest zoom tier)
+
+    private func rebuildRegionTiles() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        regionContainerLayer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        guard let layout else { return }
+        for cluster in layout.clusters {
+            regionContainerLayer.addSublayer(makeTileLayer(cluster))
+        }
+    }
+
+    private func makeTileLayer(_ cluster: LayoutCluster) -> CALayer {
+        let tile = CALayer()
+        tile.frame = cluster.bounds
+        let minSide = min(cluster.bounds.width, cluster.bounds.height)
+        tile.cornerRadius = min(28, minSide * 0.06)
+        tile.cornerCurve = .continuous
+        tile.backgroundColor = RendererColors.regionFill.cgColor
+        tile.borderColor = RendererColors.regionBorder.cgColor
+        tile.borderWidth = 1
+        tile.contentsScale = backingScale
+
+        let fontSize = min(max(cluster.bounds.height * 0.12, 40), 140)
+        let canvasWidth = max(1, cluster.bounds.width * 0.9)
+        let canvasHeight = fontSize * 1.4
+        if let img = TileLabelRenderer.image(
+            label: cluster.label,
+            count: cluster.nodeCount,
+            fontSize: fontSize,
+            canvas: CGSize(width: canvasWidth, height: canvasHeight),
+            backingScale: backingScale
+        ) {
+            let label = CALayer()
+            label.contents = img
+            label.contentsScale = backingScale
+            label.contentsGravity = .center
+            label.bounds = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
+            label.position = CGPoint(x: cluster.bounds.width / 2, y: cluster.bounds.height / 2)
+            tile.addSublayer(label)
+        }
+        return tile
     }
 
     private func resolveChipStyle(id: NodeID, kind: ResourceKind) -> ChipStyle {
@@ -424,21 +562,23 @@ final class CALayerGraphRenderer: GraphRenderer {
         layer.position = center
         layer.cornerRadius = NodeLabelMetrics.cornerRadius
         layer.cornerCurve = .continuous
-        layer.borderWidth = 1
         let selected = currentSelection.contains(node.id)
-        let style = resolveChipStyle(id: node.id, kind: node.kind)
-        layer.backgroundColor = (selected ? RendererColors.nodeBodyFillSelected : style.fill).cgColor
-        layer.borderColor = style.border.cgColor
+        let s = baseStyle(id: node.id, kind: node.kind)
+        layer.backgroundColor = selected ? RendererColors.nodeBodyFillSelected.cgColor : s.fill
+        layer.borderColor = s.border
+        layer.borderWidth = s.borderWidth
         layer.contentsScale = backingScale
         layer.contentsGravity = .center
         layer.opacity = isInFocus(node.id) ? Self.focusedOpacity : Self.unfocusedOpacity
         layer.actions = ["contents": NSNull(), "borderColor": NSNull(), "borderWidth": NSNull(), "backgroundColor": NSNull()]
-        layer.contents = nodeImage(node: node, size: size, selected: selected)
+        layer.contents = s.showLabel ? nodeImage(node: node, size: size, selected: selected) : nil
         return layer
     }
 
     private func rebuildLabels() {
         guard let graph, let layout else { return }
+        // Only the detail tier shows labels; lower tiers keep contents nil.
+        guard lastLOD == .detail else { return }
         for (id, layer) in nodeLayers {
             guard let node = graph.nodes[id] else { continue }
             let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
@@ -522,9 +662,9 @@ final class CALayerGraphRenderer: GraphRenderer {
         let toReset = lastAffected.subtracting(affected)
         for id in toReset {
             guard let layer = nodeLayers[id], let kind = graph?.nodes[id]?.kind else { continue }
-            let style = resolveChipStyle(id: id, kind: kind)
-            layer.borderColor = style.border.cgColor
-            layer.borderWidth = 1
+            let s = baseStyle(id: id, kind: kind)
+            layer.borderColor = s.border
+            layer.borderWidth = s.borderWidth
         }
 
         for id in affected {
@@ -542,9 +682,9 @@ final class CALayerGraphRenderer: GraphRenderer {
                 layer.borderColor = RendererColors.edgeDownstream.cgColor
                 layer.borderWidth = 1.5
             } else if let kind = graph?.nodes[id]?.kind {
-                let style = resolveChipStyle(id: id, kind: kind)
-                layer.borderColor = style.border.cgColor
-                layer.borderWidth = 1
+                let s = baseStyle(id: id, kind: kind)
+                layer.borderColor = s.border
+                layer.borderWidth = s.borderWidth
             }
         }
 
@@ -552,14 +692,16 @@ final class CALayerGraphRenderer: GraphRenderer {
 
         // Native selection: fill the body with the accent color and swap to the
         // high-contrast label variant. Only the (small) selection set is touched.
-        let showLabels = lastLOD == .full
+        let showLabels = lastLOD == .detail
         for id in filledSelection.subtracting(currentSelection) {
             guard let layer = nodeLayers[id], let node = graph?.nodes[id] else { continue }
-            let style = resolveChipStyle(id: id, kind: node.kind)
-            layer.backgroundColor = style.fill.cgColor
-            if showLabels, let layout {
+            let s = baseStyle(id: id, kind: node.kind)
+            layer.backgroundColor = s.fill
+            if s.showLabel, let layout {
                 let size = CGSize(width: layout.width(for: id), height: layout.nodeHeight)
                 layer.contents = nodeImage(node: node, size: size, selected: false)
+            } else {
+                layer.contents = nil
             }
         }
         for id in currentSelection {

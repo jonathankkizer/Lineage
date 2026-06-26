@@ -107,6 +107,28 @@ enum RendererColors {
         untimedChipFill(for: kind)
     }
 
+    // Semantic-zoom overview: solid color blocks (mid zoom) and folder
+    // territory tiles (lowest zoom).
+    static func blockFill(for kind: ResourceKind) -> NSColor {
+        kindColor(for: kind).withAlphaComponent(0.90)
+    }
+
+    static var untimedBlock: NSColor {
+        NSColor.tertiaryLabelColor
+    }
+
+    static var regionFill: NSColor {
+        NSColor.labelColor.withAlphaComponent(0.04)
+    }
+
+    static var regionBorder: NSColor {
+        NSColor.labelColor.withAlphaComponent(0.12)
+    }
+
+    static var regionLabel: NSColor {
+        .secondaryLabelColor
+    }
+
     static var selection: NSColor { .controlAccentColor }
     static var hover: NSColor { NSColor.controlAccentColor.withAlphaComponent(0.5) }
 

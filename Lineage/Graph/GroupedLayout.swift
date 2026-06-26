@@ -42,6 +42,8 @@ enum GroupedLayout {
             ? CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
             : .zero
 
+        let clusters = topLevelClusters(graph: graph, positions: box.positions, widths: widths, nodeHeight: nodeHeight)
+
         return GraphLayout(
             positions: box.positions,
             widths: widths,
@@ -49,8 +51,52 @@ enum GroupedLayout {
             orientation: orientation,
             layerCount: 0,
             layerDepths: [],
+            clusters: clusters,
             bounds: bounds
         )
+    }
+
+    // MARK: - Cluster bounds (top-level neighbourhoods)
+
+    nonisolated static let clusterPadding: CGFloat = 24
+
+    nonisolated private static func topLevelClusters(
+        graph: Graph,
+        positions: [NodeID: CGPoint],
+        widths: [NodeID: CGFloat],
+        nodeHeight: CGFloat
+    ) -> [LayoutCluster] {
+        struct Box { var minX, minY, maxX, maxY: CGFloat; var count: Int }
+        var boxes: [String: Box] = [:]
+        for (id, node) in graph.nodes {
+            guard let p = positions[id] else { continue }
+            let key = groupSegments(for: node).first ?? "models"
+            let halfW = (widths[id] ?? NodeLabelMetrics.minWidth) / 2
+            let halfH = nodeHeight / 2
+            if var b = boxes[key] {
+                b.minX = min(b.minX, p.x - halfW); b.maxX = max(b.maxX, p.x + halfW)
+                b.minY = min(b.minY, p.y - halfH); b.maxY = max(b.maxY, p.y + halfH)
+                b.count += 1
+                boxes[key] = b
+            } else {
+                boxes[key] = Box(minX: p.x - halfW, minY: p.y - halfH, maxX: p.x + halfW, maxY: p.y + halfH, count: 1)
+            }
+        }
+        return boxes
+            .map { key, b in
+                LayoutCluster(
+                    label: key,
+                    path: key,
+                    bounds: CGRect(
+                        x: b.minX - clusterPadding,
+                        y: b.minY - clusterPadding,
+                        width: (b.maxX - b.minX) + clusterPadding * 2,
+                        height: (b.maxY - b.minY) + clusterPadding * 2
+                    ),
+                    nodeCount: b.count
+                )
+            }
+            .sorted { $0.path < $1.path }
     }
 
     // MARK: - Cluster trie
