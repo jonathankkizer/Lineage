@@ -492,7 +492,9 @@ final class CALayerGraphRenderer: GraphRenderer {
         label.backgroundColor = RendererColors.regionLabelPlate.cgColor
         label.borderColor = RendererColors.regionLabelPlateBorder.cgColor
         label.borderWidth = 1
-        label.cornerRadius = canvasHeight * 0.32
+        // Match the node corner-radius proportion (6pt on a 30pt chip = 0.2) so
+        // the chip reads as the same family, not a pill.
+        label.cornerRadius = canvasHeight * 0.2
         label.cornerCurve = .continuous
         return label
     }

@@ -8,8 +8,9 @@ import Foundation
 /// renderer from the full graph using the final positions.
 enum GroupedLayout {
 
-    nonisolated static let groupGutter: CGFloat = 120
-    nonisolated static let shelfGutter: CGFloat = 120
+    // groupGutter must stay > 2 * clusterPadding so padded tiles don't collide.
+    nonisolated static let groupGutter: CGFloat = 200
+    nonisolated static let shelfGutter: CGFloat = 160
 
     nonisolated static func compute(graph: Graph, orientation: LayoutOrientation = .leftToRight) -> GraphLayout {
         guard !graph.nodes.isEmpty else { return .empty }
@@ -153,7 +154,7 @@ enum GroupedLayout {
 
     // MARK: - Cluster bounds (top-level neighbourhoods)
 
-    nonisolated static let clusterPadding: CGFloat = 24
+    nonisolated static let clusterPadding: CGFloat = 70
 
     nonisolated private static func topLevelClusters(
         graph: Graph,
