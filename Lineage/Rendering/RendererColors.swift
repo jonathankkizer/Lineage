@@ -129,6 +129,22 @@ enum RendererColors {
         .secondaryLabelColor
     }
 
+    // Stable per-folder tint so neighbourhoods read as distinct territories.
+    // FNV-1a over the name → hue, so colors are deterministic across launches.
+    private static func stableHue(for name: String) -> CGFloat {
+        var h: UInt64 = 1469598103934665603
+        for b in name.utf8 { h = (h ^ UInt64(b)) &* 1099511628211 }
+        return CGFloat(h % 360) / 360
+    }
+
+    static func regionTint(for name: String) -> NSColor {
+        NSColor(hue: stableHue(for: name), saturation: 0.55, brightness: 0.62, alpha: 0.13)
+    }
+
+    static func regionTintBorder(for name: String) -> NSColor {
+        NSColor(hue: stableHue(for: name), saturation: 0.55, brightness: 0.62, alpha: 0.45)
+    }
+
     static var selection: NSColor { .controlAccentColor }
     static var hover: NSColor { NSColor.controlAccentColor.withAlphaComponent(0.5) }
 

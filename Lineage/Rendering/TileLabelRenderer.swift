@@ -9,7 +9,7 @@ enum TileLabelRenderer {
 
     static func image(
         label: String,
-        count: Int,
+        count: Int?,
         fontSize: CGFloat,
         canvas: CGSize,
         backingScale: CGFloat
@@ -41,18 +41,20 @@ enum TileLabelRenderer {
         paragraph.lineBreakMode = .byTruncatingTail
 
         let nameAttrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: fontSize, weight: .semibold),
-            .foregroundColor: RendererColors.regionLabel,
+            .font: NSFont.systemFont(ofSize: fontSize, weight: .bold),
+            .foregroundColor: NSColor.labelColor,
             .paragraphStyle: paragraph,
         ]
         let countAttrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: fontSize, weight: .regular),
-            .foregroundColor: RendererColors.regionLabel.withAlphaComponent(0.6),
+            .font: NSFont.systemFont(ofSize: fontSize * 0.8, weight: .regular),
+            .foregroundColor: NSColor.secondaryLabelColor,
             .paragraphStyle: paragraph,
         ]
 
         let line = NSMutableAttributedString(string: label, attributes: nameAttrs)
-        line.append(NSAttributedString(string: "  \(count)", attributes: countAttrs))
+        if let count {
+            line.append(NSAttributedString(string: "  \(count)", attributes: countAttrs))
+        }
         line.draw(with: NSRect(origin: .zero, size: canvas),
                   options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
 

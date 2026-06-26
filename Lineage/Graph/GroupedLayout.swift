@@ -8,8 +8,8 @@ import Foundation
 /// renderer from the full graph using the final positions.
 enum GroupedLayout {
 
-    nonisolated static let groupGutter: CGFloat = 80
-    nonisolated static let shelfGutter: CGFloat = 80
+    nonisolated static let groupGutter: CGFloat = 120
+    nonisolated static let shelfGutter: CGFloat = 120
 
     nonisolated static func compute(graph: Graph, orientation: LayoutOrientation = .leftToRight) -> GraphLayout {
         guard !graph.nodes.isEmpty else { return .empty }

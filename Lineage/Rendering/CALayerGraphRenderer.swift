@@ -42,8 +42,10 @@ final class CALayerGraphRenderer: GraphRenderer {
     // regions (folder territory tiles). Thresholds are on viewport.scale.
     private enum LODBucket: Int { case detail, blocks, regions }
     private var lastLOD: LODBucket = .detail
-    private static let blocksThreshold: CGFloat = 0.5
-    private static let regionsThreshold: CGFloat = 0.25
+    // Colored blocks show much farther out than chips; tiles are reserved for the
+    // most zoomed-out view so you see model structure sooner on big projects.
+    private static let blocksThreshold: CGFloat = 0.42
+    private static let regionsThreshold: CGFloat = 0.12
 
     init() {
         rootLayer = CALayer()
@@ -212,7 +214,7 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     private static func edgeOpacityRamp(_ scale: CGFloat) -> Float {
-        let lo: CGFloat = 0.12, hi: CGFloat = blocksThreshold
+        let lo = regionsThreshold, hi = blocksThreshold
         let t = max(0, min(1, (scale - lo) / (hi - lo)))
         return Float(t)
     }
@@ -444,22 +446,40 @@ final class CALayerGraphRenderer: GraphRenderer {
     }
 
     private func makeTileLayer(_ cluster: LayoutCluster) -> CALayer {
+        let w = cluster.bounds.width
+        let h = cluster.bounds.height
+
         let tile = CALayer()
         tile.frame = cluster.bounds
-        let minSide = min(cluster.bounds.width, cluster.bounds.height)
-        tile.cornerRadius = min(28, minSide * 0.06)
+        tile.cornerRadius = min(28, min(w, h) * 0.06)
         tile.cornerCurve = .continuous
-        tile.backgroundColor = RendererColors.regionFill.cgColor
-        tile.borderColor = RendererColors.regionBorder.cgColor
-        tile.borderWidth = 1
+        tile.backgroundColor = RendererColors.regionTint(for: cluster.label).cgColor
+        tile.borderColor = RendererColors.regionTintBorder(for: cluster.label).cgColor
+        tile.borderWidth = 1.5
         tile.contentsScale = backingScale
 
-        let fontSize = min(max(cluster.bounds.height * 0.12, 40), 140)
-        let canvasWidth = max(1, cluster.bounds.width * 0.9)
+        // Fit the label to the tile (both axes). Drop the count, then the whole
+        // label, when the tile is too small — never show a truncated "se…".
+        func fit(_ text: String) -> CGFloat {
+            let byWidth = (w * 0.9) / (CGFloat(max(text.count, 3)) * 0.60)
+            let byHeight = h * 0.22
+            return min(byWidth, byHeight, 160)
+        }
+        var includeCount = w > 200 && h > 80
+        var text = includeCount ? "\(cluster.label)  \(cluster.nodeCount)" : cluster.label
+        var fontSize = fit(text)
+        if includeCount, fontSize < 20 {
+            includeCount = false
+            text = cluster.label
+            fontSize = fit(text)
+        }
+        guard fontSize >= 11 else { return tile }
+
+        let canvasWidth = max(1, w * 0.92)
         let canvasHeight = fontSize * 1.4
         if let img = TileLabelRenderer.image(
             label: cluster.label,
-            count: cluster.nodeCount,
+            count: includeCount ? cluster.nodeCount : nil,
             fontSize: fontSize,
             canvas: CGSize(width: canvasWidth, height: canvasHeight),
             backingScale: backingScale
@@ -469,7 +489,7 @@ final class CALayerGraphRenderer: GraphRenderer {
             label.contentsScale = backingScale
             label.contentsGravity = .center
             label.bounds = CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight)
-            label.position = CGPoint(x: cluster.bounds.width / 2, y: cluster.bounds.height / 2)
+            label.position = CGPoint(x: w / 2, y: h / 2)
             tile.addSublayer(label)
         }
         return tile
