@@ -76,6 +76,19 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         graphView.lineageAvailabilityProvider = { [weak self] id in
             self?.lineageAvailability(for: id) ?? .both
         }
+        graphView.fileURLProvider = { [weak self] id in
+            self?.fileURL(forNode: id)
+        }
+    }
+
+    /// Resolves a node to its source file on disk (project root + the node's
+    /// `original_file_path`). Mirrors the inspector's reveal-in-Finder logic.
+    private func fileURL(forNode id: NodeID) -> URL? {
+        guard let document = projectDocument,
+              let root = document.projectRootURL,
+              let path = document.graph?.nodes[id]?.originalFilePath,
+              !path.isEmpty else { return nil }
+        return root.appendingPathComponent(path)
     }
 
     private func lineageAvailability(for id: NodeID) -> GraphView.LineageAvailability {
@@ -193,6 +206,10 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
               let layout = document.graphLayout else { return }
 
         window?.title = document.displayName ?? "dbt Project"
+        // Proxy icon: the opened document (a `.lineagegh` connection) when there
+        // is one, otherwise the project root folder. Gives the title bar a
+        // draggable, Cmd-clickable proxy like any document window.
+        window?.representedURL = document.fileURL ?? document.projectRootURL
         if let subtitle = document.projectRootURL?.path {
             window?.subtitle = subtitle
         }

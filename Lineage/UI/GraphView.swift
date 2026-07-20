@@ -18,6 +18,11 @@ final class GraphView: NSView, NSMenuItemValidation {
     /// if no provider is wired.
     var lineageAvailabilityProvider: ((NodeID) -> LineageAvailability)?
 
+    /// Resolves a node to its on-disk source file URL (project root + original
+    /// file path) when the node maps to a file. Lets `copy(_:)` put file URLs on
+    /// the pasteboard alongside each node's unique_id.
+    var fileURLProvider: ((NodeID) -> URL?)?
+
     struct LineageAvailability {
         var hasUpstream: Bool
         var hasDownstream: Bool
@@ -418,7 +423,12 @@ final class GraphView: NSView, NSMenuItemValidation {
               let name = renderer.displayName(for: id) else {
             return nil
         }
-        selection.replace(with: id)
+        // Finder-style: right-clicking a node that's already part of a
+        // multi-selection keeps the whole selection; clicking outside it
+        // selects just that node. Don't collapse an existing marquee selection.
+        if !selection.selected.contains(id) {
+            selection.replace(with: id)
+        }
         contextMenuNode = id
 
         let availability = lineageAvailabilityProvider?(id) ?? .both
@@ -498,6 +508,43 @@ final class GraphView: NSView, NSMenuItemValidation {
     @objc func zoomToFitGraph(_ sender: Any?) { zoomToFit() }
     @objc func resetZoomGraph(_ sender: Any?) { resetZoom() }
 
+    /// Copies the selected node(s) to the pasteboard with two representations:
+    /// plain text (newline-joined `unique_id`s) for text targets, and file URLs
+    /// to each node's source file for Finder and editors. The first item carries
+    /// the full text list so single-string targets get every selected node.
+    @objc func copy(_ sender: Any?) {
+        let ids = orderedSelection()
+        guard !ids.isEmpty else { return }
+        let joinedIDs = ids.map(\.rawValue).joined(separator: "\n")
+
+        let items: [NSPasteboardItem] = ids.enumerated().map { index, id in
+            let item = NSPasteboardItem()
+            item.setString(index == 0 ? joinedIDs : id.rawValue, forType: .string)
+            if let url = fileURLProvider?(id) {
+                item.setString(url.absoluteString, forType: .fileURL)
+            }
+            return item
+        }
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.writeObjects(items)
+    }
+
+    /// Selected nodes present in the current graph, primary first, then the rest
+    /// in stable `unique_id` order so copy output is deterministic.
+    private func orderedSelection() -> [NodeID] {
+        guard hasContent, let graph = currentGraph else { return [] }
+        let selected = selection.selected.filter { graph.nodes[$0] != nil }
+        guard !selected.isEmpty else { return [] }
+        var ordered: [NodeID] = []
+        if let primary = selection.primary, selected.contains(primary) {
+            ordered.append(primary)
+        }
+        ordered.append(contentsOf: selected.subtracting(ordered).sorted { $0.rawValue < $1.rawValue })
+        return ordered
+    }
+
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         let zoomActions: Set<Selector> = [
             #selector(zoomInGraph(_:)),
@@ -507,6 +554,9 @@ final class GraphView: NSView, NSMenuItemValidation {
         ]
         if let action = menuItem.action, zoomActions.contains(action) {
             return hasContent
+        }
+        if menuItem.action == #selector(copy(_:)) {
+            return hasContent && !selection.selected.isEmpty
         }
         return true
     }
