@@ -26,6 +26,11 @@ protocol GraphRenderer: AnyObject {
 
     func refreshColors()
 
+    /// Draws the entire graph into `context` at `scale`, independent of the
+    /// on-screen viewport, and restores live state before returning. The context
+    /// is expected to already be flipped to match layer geometry.
+    func drawForExport(in context: CGContext, scale: CGFloat)
+
     func displayName(for id: NodeID) -> String?
 
     func nodeID(atContentPoint point: CGPoint) -> NodeID?

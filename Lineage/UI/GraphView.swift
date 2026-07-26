@@ -2,7 +2,7 @@ import AppKit
 import QuartzCore
 
 @MainActor
-final class GraphView: NSView, NSMenuItemValidation {
+final class GraphView: NSView, NSMenuItemValidation, NSDraggingSource {
 
     let renderer: GraphRenderer
     let selection: SelectionModel
@@ -42,13 +42,31 @@ final class GraphView: NSView, NSMenuItemValidation {
     private var currentGraph: Graph?
     private var currentLayout: GraphLayout?
     private var visibleNodes: Set<NodeID>?
+    private var buildTimings: BuildTimings = .empty
 
     private enum DragState {
         case none
         case marquee(start: CGPoint)
+        /// Mouse is down on a node. Becomes a dragging session if it travels far
+        /// enough before mouse-up; otherwise it was just a click.
+        case nodeDragCandidate(origin: CGPoint, node: NodeID)
     }
     private var dragState: DragState = .none
     private var selectionObserverID: UUID?
+
+    private static let dragSlop: CGFloat = 4
+
+    /// Drop feedback. Drawn as a sublayer of the renderer's root rather than a
+    /// separate view so it lands above the graph without another layer-backed
+    /// view in the hierarchy.
+    private lazy var dropHighlightLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.fillColor = NSColor.controlAccentColor.withAlphaComponent(0.08).cgColor
+        layer.strokeColor = NSColor.controlAccentColor.cgColor
+        layer.lineWidth = 3
+        layer.isHidden = true
+        return layer
+    }()
 
     init(selection: SelectionModel, renderer: GraphRenderer = CALayerGraphRenderer()) {
         self.selection = selection
@@ -60,6 +78,9 @@ final class GraphView: NSView, NSMenuItemValidation {
 
         magnifyRecognizer = NSMagnificationGestureRecognizer(target: self, action: #selector(handleMagnify(_:)))
         addGestureRecognizer(magnifyRecognizer)
+
+        renderer.rootLayer.addSublayer(dropHighlightLayer)
+        registerForDraggedTypes(ProjectDropSupport.acceptedTypes)
 
         selectionObserverID = selection.addObserver { [weak self] model in
             self?.renderer.setSelection(model.selected, primary: model.primary)
@@ -244,6 +265,7 @@ final class GraphView: NSView, NSMenuItemValidation {
     }
 
     func setBuildTimings(_ timings: BuildTimings) {
+        buildTimings = timings
         renderer.setBuildTimings(timings)
     }
 
@@ -295,9 +317,12 @@ final class GraphView: NSView, NSMenuItemValidation {
             } else {
                 selection.replace(with: id)
             }
-            dragState = .none
+            // Arm a possible drag-out. A plain click never travels far enough to
+            // trip it, so selection behaviour is unchanged.
+            dragState = .nodeDragCandidate(origin: viewPoint, node: id)
             window?.makeFirstResponder(self)
             if event.clickCount == 2 {
+                dragState = .none
                 NSApp.sendAction(#selector(LineageActions.focusOnSelection(_:)), to: nil, from: self)
             }
             return
@@ -409,6 +434,13 @@ final class GraphView: NSView, NSMenuItemValidation {
     }
 
     override func mouseDragged(with event: NSEvent) {
+        if case .nodeDragCandidate(let origin, let node) = dragState {
+            let current = convert(event.locationInWindow, from: nil)
+            guard hypot(current.x - origin.x, current.y - origin.y) > Self.dragSlop else { return }
+            dragState = .none
+            beginNodeDrag(with: event, anchor: node)
+            return
+        }
         guard case .marquee(let start) = dragState else { return }
         let viewPoint = convert(event.locationInWindow, from: nil)
         let contentPoint = viewport.contentPoint(fromView: viewPoint)
@@ -460,6 +492,131 @@ final class GraphView: NSView, NSMenuItemValidation {
             return
         }
         if toolTip != name { toolTip = name }
+    }
+
+    // MARK: - Dragging out
+
+    /// Drags the current selection out of the app. Nodes that map to a file on
+    /// disk drag as file URLs (so Finder, BBEdit, and a Terminal window all do
+    /// the right thing); nodes that don't drag as their unique_id text.
+    private func beginNodeDrag(with event: NSEvent, anchor: NodeID) {
+        // Dragging an unselected node acts on that node, matching Finder.
+        if !selection.selected.contains(anchor) {
+            selection.replace(with: anchor)
+        }
+        let ids = orderedSelection()
+        guard !ids.isEmpty else { return }
+
+        var items: [NSDraggingItem] = []
+        for id in ids {
+            let frame = dragFrame(for: id)
+            if let url = fileURLProvider?(id) {
+                let item = NSDraggingItem(pasteboardWriter: url as NSURL)
+                item.setDraggingFrame(frame, contents: NSWorkspace.shared.icon(forFile: url.path))
+                items.append(item)
+            } else {
+                let item = NSDraggingItem(pasteboardWriter: id.rawValue as NSString)
+                item.setDraggingFrame(frame, contents: dragTextImage(for: id, size: frame.size))
+                items.append(item)
+            }
+        }
+        guard !items.isEmpty else { return }
+
+        renderer.setHover(nil)
+        beginDraggingSession(with: items, event: event, source: self)
+    }
+
+    nonisolated func draggingSession(
+        _ session: NSDraggingSession,
+        sourceOperationMaskFor context: NSDraggingContext
+    ) -> NSDragOperation {
+        // Copy out to Finder and other apps; nothing inside Lineage consumes a
+        // node drag, so there's no in-app operation to offer.
+        switch context {
+        case .outsideApplication: return [.copy, .link]
+        default: return []
+        }
+    }
+
+    /// The node's on-screen rect, so the drag image lifts off from the node the
+    /// user actually grabbed.
+    private func dragFrame(for id: NodeID) -> CGRect {
+        guard let layout = currentLayout, let rect = layout.rect(for: id) else {
+            return CGRect(x: 0, y: 0, width: 32, height: 32)
+        }
+        return rect.applying(viewport.transform)
+    }
+
+    private func dragTextImage(for id: NodeID, size: CGSize) -> NSImage? {
+        let name = currentGraph?.nodes[id]?.name ?? id.displayName
+        let font = NSFont.systemFont(ofSize: NodeLabelMetrics.fontSize)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: NSColor.labelColor,
+        ]
+        let bounds = CGRect(origin: .zero, size: size)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSColor.controlBackgroundColor.withAlphaComponent(0.9).setFill()
+        let path = NSBezierPath(roundedRect: bounds, xRadius: NodeLabelMetrics.cornerRadius, yRadius: NodeLabelMetrics.cornerRadius)
+        path.fill()
+        NSColor.separatorColor.setStroke()
+        path.stroke()
+        let textSize = (name as NSString).size(withAttributes: attributes)
+        (name as NSString).draw(
+            at: CGPoint(x: bounds.midX - textSize.width / 2, y: bounds.midY - textSize.height / 2),
+            withAttributes: attributes
+        )
+        image.unlockFocus()
+        return image
+    }
+
+    // MARK: - Dropping in
+
+    override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
+        let operation = ProjectDropSupport.operation(for: sender.draggingPasteboard)
+        setDropHighlight(visible: operation != [])
+        return operation
+    }
+
+    override func draggingUpdated(_ sender: any NSDraggingInfo) -> NSDragOperation {
+        ProjectDropSupport.operation(for: sender.draggingPasteboard)
+    }
+
+    override func draggingExited(_ sender: (any NSDraggingInfo)?) {
+        setDropHighlight(visible: false)
+    }
+
+    override func draggingEnded(_ sender: any NSDraggingInfo) {
+        setDropHighlight(visible: false)
+    }
+
+    override func prepareForDragOperation(_ sender: any NSDraggingInfo) -> Bool {
+        !ProjectDropSupport.openableURLs(in: sender.draggingPasteboard).isEmpty
+    }
+
+    override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
+        setDropHighlight(visible: false)
+        let urls = ProjectDropSupport.openableURLs(in: sender.draggingPasteboard)
+        guard !urls.isEmpty else { return false }
+        ProjectDropSupport.open(urls)
+        return true
+    }
+
+    private func setDropHighlight(visible: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        dropHighlightLayer.isHidden = !visible
+        guard visible else { return }
+        let inset = bounds.insetBy(dx: 6, dy: 6)
+        dropHighlightLayer.frame = bounds
+        dropHighlightLayer.path = CGPath(
+            roundedRect: inset,
+            cornerWidth: 12,
+            cornerHeight: 12,
+            transform: nil
+        )
     }
 
     // MARK: - Accessibility
@@ -616,7 +773,27 @@ final class GraphView: NSView, NSMenuItemValidation {
             enabled: availability.hasDownstream,
             disabledTooltip: "No downstream nodes"
         ))
+
+        // Everything below acts on the whole selection, not just the clicked
+        // node — the selection was already reconciled above.
+        let count = selection.selected.count
+        let suffix = count > 1 ? " (\(count))" : ""
+        menu.addItem(.separator())
+        menu.addItem(contextItem(title: "Copy\(suffix)", action: #selector(copy(_:)), enabled: true))
+        menu.addItem(contextItem(title: "Copy Unique ID\(count > 1 ? "s" : "")", action: #selector(copyUniqueIdentifiers(_:)), enabled: true))
+
+        let hasFiles = orderedSelection().contains { fileURLProvider?($0) != nil }
+        menu.addItem(.separator())
+        menu.addItem(contextItem(title: "Reveal in Finder", action: #selector(revealSelectionInFinder(_:)), enabled: hasFiles))
+        menu.addItem(contextItem(title: "Share\u{2026}", action: #selector(shareSelection(_:)), enabled: true))
         return menu
+    }
+
+    private func contextItem(title: String, action: Selector, enabled: Bool) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        item.isEnabled = enabled
+        return item
     }
 
     private func lineageItem(
@@ -669,27 +846,85 @@ final class GraphView: NSView, NSMenuItemValidation {
     @objc func zoomToFitGraph(_ sender: Any?) { zoomToFit() }
     @objc func resetZoomGraph(_ sender: Any?) { resetZoom() }
 
-    /// Copies the selected node(s) to the pasteboard with two representations:
-    /// plain text (newline-joined `unique_id`s) for text targets, and file URLs
-    /// to each node's source file for Finder and editors. The first item carries
-    /// the full text list so single-string targets get every selected node.
+    /// Copies the selected node(s) with several representations, so the same
+    /// Cmd-C is useful wherever it lands:
+    ///
+    /// - plain text: node names, which is what a `dbt run --select` wants
+    /// - tab-separated: a real table, so pasting into Numbers or a spreadsheet
+    ///   gives columns rather than one string
+    /// - file URLs: one per node, so Finder and editors receive the source files
+    ///
+    /// The first pasteboard item carries the whole-selection text so
+    /// single-string targets still get every selected node.
     @objc func copy(_ sender: Any?) {
+        writeSelectionToPasteboard(NSPasteboard.general, useUniqueIDs: false)
+    }
+
+    /// Same selection, but the text representation is `unique_id`s. Offered
+    /// separately because both answers are legitimately what a user might want.
+    @objc func copyUniqueIdentifiers(_ sender: Any?) {
+        writeSelectionToPasteboard(NSPasteboard.general, useUniqueIDs: true)
+    }
+
+    private func writeSelectionToPasteboard(_ pasteboard: NSPasteboard, useUniqueIDs: Bool) {
         let ids = orderedSelection()
         guard !ids.isEmpty else { return }
-        let joinedIDs = ids.map(\.rawValue).joined(separator: "\n")
+
+        let text = ids.map { useUniqueIDs ? $0.rawValue : displayName(for: $0) }.joined(separator: "\n")
 
         let items: [NSPasteboardItem] = ids.enumerated().map { index, id in
             let item = NSPasteboardItem()
-            item.setString(index == 0 ? joinedIDs : id.rawValue, forType: .string)
+            let own = useUniqueIDs ? id.rawValue : displayName(for: id)
+            item.setString(index == 0 ? text : own, forType: .string)
+            if index == 0, ids.count > 1 {
+                item.setString(tabSeparatedTable(for: ids), forType: .tabularText)
+            }
             if let url = fileURLProvider?(id) {
                 item.setString(url.absoluteString, forType: .fileURL)
             }
             return item
         }
 
-        let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.writeObjects(items)
+    }
+
+    private func displayName(for id: NodeID) -> String {
+        currentGraph?.nodes[id]?.name ?? id.displayName
+    }
+
+    private func tabSeparatedTable(for ids: [NodeID]) -> String {
+        var rows = ["Name\tKind\tSchema\tMaterialization\tRuntime (s)\tUnique ID"]
+        for id in ids {
+            guard let node = currentGraph?.nodes[id] else { continue }
+            let runtime = buildTimings.executionTime[id].map { String(format: "%.3f", $0) } ?? ""
+            rows.append([
+                node.name,
+                node.kind.displayName,
+                node.schema ?? "",
+                node.materialization ?? "",
+                runtime,
+                id.rawValue,
+            ].joined(separator: "\t"))
+        }
+        return rows.joined(separator: "\n")
+    }
+
+    @objc func revealSelectionInFinder(_ sender: Any?) {
+        let urls = orderedSelection().compactMap { fileURLProvider?($0) }
+        guard !urls.isEmpty else { return }
+        NSWorkspace.shared.activateFileViewerSelecting(urls)
+    }
+
+    @objc func shareSelection(_ sender: Any?) {
+        let urls = orderedSelection().compactMap { fileURLProvider?($0) }
+        let items: [Any] = urls.isEmpty
+            ? [orderedSelection().map { displayName(for: $0) }.joined(separator: "\n")]
+            : urls
+        guard !items.isEmpty else { return }
+        let picker = NSSharingServicePicker(items: items)
+        let anchor = orderedSelection().first.map { dragFrame(for: $0) } ?? CGRect(origin: .zero, size: CGSize(width: 1, height: 1))
+        picker.show(relativeTo: anchor, of: self, preferredEdge: .minY)
     }
 
     /// Selects everything currently on screen. Respects focus/search/filter
@@ -727,8 +962,16 @@ final class GraphView: NSView, NSMenuItemValidation {
         if let action = menuItem.action, zoomActions.contains(action) {
             return hasContent
         }
-        if menuItem.action == #selector(copy(_:)) {
+        let selectionActions: Set<Selector> = [
+            #selector(copy(_:)),
+            #selector(copyUniqueIdentifiers(_:)),
+            #selector(shareSelection(_:)),
+        ]
+        if let action = menuItem.action, selectionActions.contains(action) {
             return hasContent && !selection.selected.isEmpty
+        }
+        if menuItem.action == #selector(revealSelectionInFinder(_:)) {
+            return hasContent && orderedSelection().contains { fileURLProvider?($0) != nil }
         }
         if menuItem.action == #selector(selectAll(_:)) {
             return hasContent && !(visibleNodes ?? currentGraph.map { Set($0.nodes.keys) } ?? []).isEmpty

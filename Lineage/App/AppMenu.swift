@@ -80,6 +80,20 @@ enum AppMenu {
         menu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Reload Project", action: #selector(LineageActions.reloadProject(_:)), keyEquivalent: "r")
+        menu.addItem(.separator())
+
+        let exportItem = NSMenuItem(title: "Export", action: nil, keyEquivalent: "")
+        let exportMenu = NSMenu(title: "Export")
+        exportMenu.addItem(withTitle: "Graph as PDF\u{2026}", action: #selector(LineageActions.exportGraphAsPDF(_:)), keyEquivalent: "")
+        exportMenu.addItem(withTitle: "Graph as PNG\u{2026}", action: #selector(LineageActions.exportGraphAsPNG(_:)), keyEquivalent: "")
+        exportItem.submenu = exportMenu
+        menu.addItem(exportItem)
+
+        menu.addItem(.separator())
+        let pageSetup = NSMenuItem(title: "Page Setup\u{2026}", action: #selector(LineageActions.runPageLayout(_:)), keyEquivalent: "P")
+        pageSetup.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(pageSetup)
+        menu.addItem(withTitle: "Print\u{2026}", action: #selector(LineageActions.printGraph(_:)), keyEquivalent: "p")
 
         let item = NSMenuItem()
         item.submenu = menu

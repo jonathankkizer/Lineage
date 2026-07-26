@@ -11,6 +11,10 @@ import AppKit
     func openDemoProject(_ sender: Any?)
     func showWelcomeWindow(_ sender: Any?)
     func connectToGitHub(_ sender: Any?)
+    func exportGraphAsPDF(_ sender: Any?)
+    func exportGraphAsPNG(_ sender: Any?)
+    func printGraph(_ sender: Any?)
+    func runPageLayout(_ sender: Any?)
 
     // App
     func showSettings(_ sender: Any?)

@@ -587,6 +587,53 @@ final class CALayerGraphRenderer: GraphRenderer {
         marqueeLayer.path = path
     }
 
+    /// Renders the whole graph for export/print.
+    ///
+    /// Reuses the live layer tree rather than building a parallel drawing path,
+    /// so an export always matches what's on screen. Everything it perturbs —
+    /// the root frame, the viewport transform, the zoom tier, and the marquee —
+    /// is saved and put back, and the whole thing runs inside one non-animating
+    /// transaction so no intermediate state ever reaches the screen.
+    func drawForExport(in context: CGContext, scale: CGFloat) {
+        guard contentBounds.width > 0, contentBounds.height > 0 else { return }
+
+        let savedRootFrame = rootLayer.frame
+        let savedTransform = contentLayer.affineTransform()
+        let savedZoom = zoomScale
+        let savedMarquee = marqueeLayer.path
+        let savedMasks = rootLayer.masksToBounds
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
+        // Always export at the detail tier — an export at a "blocks" zoom would
+        // silently drop every label.
+        setLevelOfDetail(zoomScale: 1)
+        marqueeLayer.path = nil
+        rootLayer.masksToBounds = false
+        rootLayer.frame = CGRect(
+            origin: .zero,
+            size: CGSize(width: contentBounds.width * scale, height: contentBounds.height * scale)
+        )
+        contentLayer.setAffineTransform(
+            CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: -contentBounds.minX, y: -contentBounds.minY)
+        )
+        CATransaction.commit()
+        CATransaction.flush()
+
+        rootLayer.render(in: context)
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        rootLayer.frame = savedRootFrame
+        rootLayer.masksToBounds = savedMasks
+        contentLayer.setAffineTransform(savedTransform)
+        marqueeLayer.path = savedMarquee
+        CATransaction.commit()
+        setLevelOfDetail(zoomScale: savedZoom)
+    }
+
     func nodeID(atContentPoint point: CGPoint) -> NodeID? {
         index?.query(point: point)
     }

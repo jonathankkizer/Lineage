@@ -193,6 +193,11 @@ final class InspectorView: NSView {
 
         let title = NSTextField(labelWithString: node.name)
         title.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
+        // Inspector values are selectable so they can be copied. `labelWithString`
+        // builds a non-selectable field, which left the node name, schema, file
+        // path, and column names impossible to get out of the app by hand.
+        // Selectable fields also pick up the standard Copy context menu for free.
+        title.isSelectable = true
         title.lineBreakMode = .byTruncatingMiddle
         title.maximumNumberOfLines = 2
         title.setContentCompressionResistancePriority(.defaultLow - 1, for: .horizontal)
@@ -208,6 +213,7 @@ final class InspectorView: NSView {
         let label = NSTextField(labelWithString: text)
         label.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
         label.textColor = .secondaryLabelColor
+        label.isSelectable = true
         label.lineBreakMode = .byTruncatingMiddle
         return label
     }
@@ -259,6 +265,7 @@ final class InspectorView: NSView {
         let label = NSTextField(labelWithString: s)
         label.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
         label.textColor = .labelColor
+        label.isSelectable = true
         label.lineBreakMode = .byTruncatingMiddle
         label.maximumNumberOfLines = 1
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -269,6 +276,7 @@ final class InspectorView: NSView {
         let label = NSTextField(wrappingLabelWithString: s)
         label.font = NSFont.systemFont(ofSize: 12)
         label.textColor = .labelColor
+        label.isSelectable = true
         return label
     }
 
@@ -428,6 +436,7 @@ final class InspectorView: NSView {
         let name = NSTextField(labelWithString: col.name)
         name.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
         name.textColor = .labelColor
+        name.isSelectable = true
         name.lineBreakMode = .byTruncatingTail
         name.maximumNumberOfLines = 1
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -436,6 +445,7 @@ final class InspectorView: NSView {
             let typeLabel = NSTextField(labelWithString: type)
             typeLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)
             typeLabel.textColor = .tertiaryLabelColor
+            typeLabel.isSelectable = true
             typeLabel.lineBreakMode = .byTruncatingTail
             typeLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             stack.addArrangedSubview(typeLabel)

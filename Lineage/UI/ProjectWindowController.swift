@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 @MainActor
 final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWindowDelegate, NSMenuItemValidation, NSSearchFieldDelegate {
@@ -498,6 +499,42 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         searchToolbarItem?.searchField.stringValue = ""
         filterPopover?.performClose(nil)
         document.reload()
+    }
+
+    // MARK: - Export and print
+
+    private var exportBaseName: String {
+        projectDocument?.projectRootURL?.lastPathComponent ?? "Lineage Graph"
+    }
+
+    @objc func exportGraphAsPDF(_ sender: Any?) {
+        GraphExport.runExportPanel(
+            renderer: graphView.renderer,
+            window: window,
+            suggestedName: exportBaseName,
+            type: .pdf
+        )
+    }
+
+    @objc func exportGraphAsPNG(_ sender: Any?) {
+        GraphExport.runExportPanel(
+            renderer: graphView.renderer,
+            window: window,
+            suggestedName: exportBaseName,
+            type: .png
+        )
+    }
+
+    @objc func printGraph(_ sender: Any?) {
+        GraphExport.print(renderer: graphView.renderer, window: window, jobTitle: exportBaseName)
+    }
+
+    @objc func runPageLayout(_ sender: Any?) {
+        guard let window else {
+            NSPageLayout().runModal(with: NSPrintInfo.shared)
+            return
+        }
+        NSPageLayout().beginSheet(with: NSPrintInfo.shared, modalFor: window, delegate: nil, didEnd: nil, contextInfo: nil)
     }
 
     // MARK: - Filter actions
@@ -1034,6 +1071,8 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             return window?.toolbar != nil
         case #selector(reloadProject(_:)):
             return projectDocument?.manifestURL != nil
+        case #selector(exportGraphAsPDF(_:)), #selector(exportGraphAsPNG(_:)), #selector(printGraph(_:)):
+            return projectDocument?.graphLayout != nil
         case #selector(toggleCriticalPath(_:)):
             let available = projectDocument?.criticalPath != nil
             menuItem.state = (available && criticalPathActive) ? .on : .off
