@@ -37,6 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
         documentController = DbtDocumentController()
         NSApp.mainMenu = AppMenu.build()
+        // Lets other apps hand Lineage a folder via their Services menu. The
+        // consuming side of Services works through the responder chain and needs
+        // no registration.
+        NSApp.servicesProvider = self
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -127,6 +131,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         }
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
+    }
+
+    /// Services entry point, named by `NSMessage` in Info.plist. Opens whichever
+    /// dropped/selected folders Lineage can actually read and reports the rest.
+    @objc func openProjectFromService(
+        _ pasteboard: NSPasteboard,
+        userData: String?,
+        error: AutoreleasingUnsafeMutablePointer<NSString?>
+    ) {
+        let urls = ProjectDropSupport.openableURLs(in: pasteboard)
+        guard !urls.isEmpty else {
+            error.pointee = "That folder doesn't contain a dbt manifest." as NSString
+            return
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        ProjectDropSupport.open(urls)
     }
 
     @objc func showSettings(_ sender: Any?) {

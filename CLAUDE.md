@@ -22,6 +22,8 @@ The whole reason this app exists rather than another web view. The rules are not
 - **Not sandboxed.** Sandboxing is off (`ENABLE_APP_SANDBOX = NO`) so we can shell out to the user's `gh` CLI for the GitHub Actions integration. Hardened runtime + Developer ID + notarization still apply on release builds. The leftover `startAccessingSecurityScopedResource()` calls are no-ops outside sandbox; left in as cheap insurance if we ever want to revisit.
 - **Light/dark mode adapts cleanly.** All CALayer-cached `CGColor` values re-resolve on `viewDidChangeEffectiveAppearance` via `performAsCurrentDrawingAppearance`.
 - **Native idioms before invention.** Source-list sidebar (NSOutlineView with `.sourceList` style), proper NSToolbar with `toggleSidebar` + `sidebarTrackingSeparator`, NSSplitViewItem with `.inspector` behavior for snap-collapse, Cmd+I to toggle the inspector (the Finder-style "Get Info" convention, not Cmd+Option+I which is Web Inspector / Xcode), Cmd+[/Cmd+] for Safari-style focus history, Cmd+F to focus the search field.
+- **Standard shortcuts outrank app-specific ones.** Two app-specific bindings were given up to avoid trapping common ones: Connect to GitHub lost Shift+Cmd+G (that's Find Previous), and Page Setup went without a key equivalent rather than take Shift+Cmd+P from Show Critical Path. If you add a binding, check `AppMenu.swift` end to end first — the whole menu bar is built in one file, so a conflict is easy to see and easy to miss.
+- **Accessibility is part of the bar, not a follow-up.** The canvas is a single NSView over CALayers, so it has to vend its own accessibility elements — see `GraphAccessibility.swift`. Anything that adds a new visual channel needs a non-color counterpart under Differentiate Without Color, and anything that adds meaning needs to reach VoiceOver.
 
 If a change feels like it requires fighting AppKit, the change is wrong. Find the native pattern.
 
@@ -91,7 +93,7 @@ These are the non-obvious ones — read them before second-guessing the code.
 
 ## What ships (v1)
 
-- AppKit shell: `@main enum AppMain`, programmatic menu bar with App / File / Edit / View / Navigate / Window / Help, Open Recent integration.
+- AppKit shell: `@main enum AppMain`, programmatic menu bar with App / File / Edit / View / Navigate / Window / Help, Open Recent integration, Settings window at Cmd+, and a Services provider ("Open in Lineage").
 - Document architecture: opens a folder containing `dbt_project.yml + target/manifest.json`, OR a bare `target/` directly. Cmd+R reloads from disk.
 - GitHub Actions integration (`File → Connect to GitHub Actions…`, also surfaced on the Welcome window): cascading picker for repo / workflow / branch / artifact, gh-status preflight, last-successful-run preview. Saves a `.lineagegh` connection document into `~/Library/Application Support/Lineage/Connections/` and opens it like any other project. Cmd+R re-fetches the latest run via `gh`.
 - Manifest parsing (~10MB JSON): off-main, ~0.5–1.5s. Codable types narrowed to v1 fields only.
@@ -105,6 +107,41 @@ These are the non-obvious ones — read them before second-guessing the code.
 - Inspector pane (`Cmd+I` toggles): title + kind chip, schema.database subtitle, properties (right-aligned key column), tag chips with wrapping flow, file path with reveal-in-Finder arrow, description, DEPENDS ON / REFERENCED BY / COLUMNS in bordered boxes with first-8-then-disclosure truncation. List dots match edge colors (upstream=blue, downstream=orange).
 - Light/dark mode + accent color adapt correctly across all custom-rendered surfaces.
 
+## Mac citizenship
+
+Cross-cutting platform behaviour, kept together because it's easy to regress
+piecemeal:
+
+- **State.** Window frames autosave per document (a single shared key made every
+  window fight over one frame). Split dividers, sidebar disclosure, and toolbar
+  configuration autosave app-wide. Viewport, selection, focus anchor, search
+  query, critical path, and the node filter go through
+  `encodeRestorableState`/`restoreState` on `ProjectWindowController`.
+  Restoration and the document's async load race, so decoded state parks in
+  `pendingRestoredState` until the graph exists — whichever finishes second
+  calls `applyRestoredStateIfReady()`.
+- **Settings.** `SettingsWindowController`, classic NSToolbar pane switcher,
+  General / Appearance / Updates. Any new preference belongs here, not scattered
+  into a menu.
+- **Drag and drop.** Nodes drag out as file URLs (or text when there's no
+  backing file); project folders and `.lineagegh` files drop onto project
+  windows and the Welcome window. Drop validation lives in
+  `ProjectDropSupport` and deliberately mirrors `DbtProjectDocument.read`, so a
+  drop that highlights is a drop that opens — keep them in step.
+- **Pasteboard.** Cmd-C writes names as plain text, a TSV table for
+  multi-selections, and per-node file URLs. Unique_ids are a separate explicit
+  command.
+- **Accessibility.** `GraphAccessibility.swift` vends one element per on-screen
+  node. Its concurrency shape is forced by the SDK: NSAccessibilityElement's
+  overrides are nonisolated while everything they read is MainActor, so each
+  hops through `MainActor.assumeIsolated` reaching the view via a Sendable box
+  — capturing the element itself is what region isolation rejects.
+- **Export.** `GraphExport` renders through the live layer tree via
+  `GraphRenderer.drawForExport`, so output matches the screen. That method
+  perturbs real renderer state (root frame, viewport transform, zoom tier,
+  marquee) and restores it; if you add renderer state that affects drawing, save
+  and restore it there too.
+
 ## What's deferred
 
 The architecture absorbs each of these without restructure:
@@ -117,18 +154,16 @@ The architecture absorbs each of these without restructure:
 - `run_results.json` status badges on nodes
 - `catalog.json` integration for actual column types + row counts
 - Compiled SQL viewer pane
-- Preferences window (classic NSToolbar pane-switcher style; not SwiftUI Settings scene)
 - AppleScript dictionary + App Intents / Shortcuts
-- Drag and drop (folder onto dock; node out as URL or .sql reference)
-- Services menu integration
 - Tabs within a window for multiple views of the same project
-- Full state restoration (window position, zoom, selection, filter)
 - Lineage mode (linearized ancestors → node → descendants)
-- Multiple layout algorithms with toolbar picker
 - Metal renderer (drop-in `MetalGraphRenderer: GraphRenderer`). Trigger: sustained <60fps pan on M-series at full project, OR projects with >5k nodes.
 - Full Sugiyama (Brandes-Köpf x-coord assignment for nicer alignments)
 - Edge bundling
-- Tag/folder multi-select (currently single-select)
+- Tag/folder multi-select. Still single-select: `FilterScope` is a single
+  `.all`/`.folder`/`.tag` case threaded through `Graph.filtered(by:)` and the
+  layout cache key, so multi-select is a change to the filtering core rather
+  than a sidebar tweak.
 - Notarization, code signing for distribution
 
 ## Working in this codebase

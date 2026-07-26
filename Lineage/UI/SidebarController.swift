@@ -1,7 +1,7 @@
 import AppKit
 
 @MainActor
-final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutlineViewDelegate {
+final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutlineViewDelegate, NSMenuDelegate, NSMenuItemValidation {
 
     final class Row: NSObject {
         enum Kind: Equatable {
@@ -52,6 +52,10 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
 
     var onScopeChange: ((FilterScope) -> Void)?
 
+    /// Set by the window controller so folder rows can resolve to a real
+    /// directory for Reveal in Finder.
+    var projectRootProvider: (() -> URL?)?
+
     override func loadView() {
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
         column.title = "Name"
@@ -73,6 +77,10 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
         outlineView.autosaveName = "ProjectSidebar"
         outlineView.autosaveExpandedItems = true
         outlineView.autosaveTableColumns = false
+
+        let contextMenu = NSMenu()
+        contextMenu.delegate = self
+        outlineView.menu = contextMenu
 
         scrollView.documentView = outlineView
         scrollView.hasVerticalScroller = true
@@ -245,6 +253,98 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
         default: return
         }
         onScopeChange?(scope)
+    }
+
+    // MARK: - Context menu
+
+    /// The row the context menu applies to: the right-clicked row if there is
+    /// one, otherwise the current selection — the Finder convention.
+    private var contextRow: Row? {
+        let index = outlineView.clickedRow >= 0 ? outlineView.clickedRow : outlineView.selectedRow
+        guard index >= 0 else { return nil }
+        return outlineView.item(atRow: index) as? Row
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        guard let row = contextRow, !row.isGroup else { return }
+
+        menu.addItem(item(title: "Show Only \u{201C}\(row.title)\u{201D}", action: #selector(scopeToContextRow(_:))))
+        menu.addItem(item(title: "Show All", action: #selector(scopeToAll(_:))))
+        menu.addItem(.separator())
+
+        switch row.kind {
+        case .folder:
+            menu.addItem(item(title: "Copy Folder Path", action: #selector(copyContextRowValue(_:))))
+            menu.addItem(item(title: "Reveal in Finder", action: #selector(revealContextRowInFinder(_:))))
+        case .tag:
+            menu.addItem(item(title: "Copy Tag Name", action: #selector(copyContextRowValue(_:))))
+        default:
+            break
+        }
+    }
+
+    private func item(title: String, action: Selector) -> NSMenuItem {
+        let entry = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        entry.target = self
+        return entry
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        guard menuItem.action == #selector(revealContextRowInFinder(_:)) else { return true }
+        return contextFolderURL() != nil
+    }
+
+    private func contextFolderURL() -> URL? {
+        guard let row = contextRow, case .folder(let path) = row.kind,
+              let root = projectRootProvider?() else { return nil }
+        let url = root.appendingPathComponent(path)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else { return nil }
+        return url
+    }
+
+    @objc private func scopeToContextRow(_ sender: Any?) {
+        guard let row = contextRow else { return }
+        switch row.kind {
+        case .all: onScopeChange?(.all)
+        case .folder(let path): onScopeChange?(.folder(path))
+        case .tag(let name): onScopeChange?(.tag(name))
+        default: return
+        }
+        selectVisualRow(rowMatching: scope(for: row))
+    }
+
+    @objc private func scopeToAll(_ sender: Any?) {
+        onScopeChange?(.all)
+        selectVisualRow(rowMatching: .all)
+    }
+
+    private func scope(for row: Row) -> FilterScope {
+        switch row.kind {
+        case .folder(let path): return .folder(path)
+        case .tag(let name): return .tag(name)
+        default: return .all
+        }
+    }
+
+    @objc private func copyContextRowValue(_ sender: Any?) {
+        guard let row = contextRow else { return }
+        let value: String
+        switch row.kind {
+        case .folder(let path): value = path
+        case .tag(let name): value = name
+        default: value = row.title
+        }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(value, forType: .string)
+    }
+
+    @objc private func revealContextRowInFinder(_ sender: Any?) {
+        guard let url = contextFolderURL() else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
     // MARK: - Cell builders

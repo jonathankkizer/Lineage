@@ -67,8 +67,10 @@ enum AppMenu {
         menu.addItem(withTitle: "Open\u{2026}", action: #selector(NSDocumentController.openDocument(_:)), keyEquivalent: "o")
         menu.addItem(withTitle: "Open Demo Project", action: #selector(LineageActions.openDemoProject(_:)), keyEquivalent: "")
 
-        let connect = menu.addItem(withTitle: "Connect to GitHub Actions\u{2026}", action: #selector(LineageActions.connectToGitHub(_:)), keyEquivalent: "g")
-        connect.keyEquivalentModifierMask = [.command, .shift]
+        // No key equivalent: Shift-Cmd-G is Find Previous everywhere on the Mac,
+        // and connecting a repo is a once-per-project action that doesn't need
+        // to trap it.
+        menu.addItem(withTitle: "Connect to GitHub Actions\u{2026}", action: #selector(LineageActions.connectToGitHub(_:)), keyEquivalent: "")
 
         let openRecent = NSMenuItem(title: "Open Recent", action: nil, keyEquivalent: "")
         let openRecentMenu = NSMenu(title: "Open Recent")
@@ -90,9 +92,10 @@ enum AppMenu {
         menu.addItem(exportItem)
 
         menu.addItem(.separator())
-        let pageSetup = NSMenuItem(title: "Page Setup\u{2026}", action: #selector(LineageActions.runPageLayout(_:)), keyEquivalent: "P")
-        pageSetup.keyEquivalentModifierMask = [.command, .shift]
-        menu.addItem(pageSetup)
+        // Page Setup conventionally takes Shift-Cmd-P, but Show Critical Path
+        // already owns it and is a far more frequent action here. Page Setup is
+        // rare enough to live without a key equivalent.
+        menu.addItem(withTitle: "Page Setup\u{2026}", action: #selector(LineageActions.runPageLayout(_:)), keyEquivalent: "")
         menu.addItem(withTitle: "Print\u{2026}", action: #selector(LineageActions.printGraph(_:)), keyEquivalent: "p")
 
         let item = NSMenuItem()

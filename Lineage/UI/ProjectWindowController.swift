@@ -165,6 +165,9 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         sidebarController.onScopeChange = { [weak self] scope in
             self?.sidebarScopeChanged(scope)
         }
+        sidebarController.projectRootProvider = { [weak self] in
+            self?.projectDocument?.projectRootURL
+        }
     }
 
     private func sidebarScopeChanged(_ scope: FilterScope) {
