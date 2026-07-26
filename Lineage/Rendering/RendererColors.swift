@@ -7,6 +7,48 @@ enum NodeColoring: Int, Sendable {
 
 enum RendererColors {
 
+    // MARK: - Accessibility display settings
+    //
+    // At the detail zoom tier a node already carries an SF Symbol for its kind,
+    // so kind is not color-only there. Three channels genuinely are: build-time
+    // coloring, upstream/downstream edge highlighting, and the solid blocks at
+    // low zoom. Those get a second, non-color channel when the user has asked
+    // for one.
+
+    static var increaseContrast: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+    }
+
+    static var differentiateWithoutColor: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldDifferentiateWithoutColor
+    }
+
+    static var chipBorderWidth: CGFloat { increaseContrast ? 2 : 1 }
+
+    /// Build time as line weight as well as hue: the slowest models read as the
+    /// heaviest outlines when Differentiate Without Color is on.
+    static func buildTimeBorderWidth(score: Double) -> CGFloat {
+        guard differentiateWithoutColor else { return chipBorderWidth }
+        switch score {
+        case ..<0.50: return chipBorderWidth
+        case ..<0.80: return chipBorderWidth + 1
+        case ..<0.95: return chipBorderWidth + 2
+        default:      return chipBorderWidth + 3
+        }
+    }
+
+    /// Downstream edges dash while upstream stays solid, so direction survives
+    /// without the blue/orange distinction.
+    static var downstreamEdgeDash: [NSNumber]? {
+        differentiateWithoutColor ? [5, 3] : nil
+    }
+
+    static var downstreamNeighborBorderWidth: CGFloat {
+        differentiateWithoutColor ? 3 : 1.5
+    }
+
+    static var upstreamNeighborBorderWidth: CGFloat { 1.5 }
+
     static func kindColor(for kind: ResourceKind) -> NSColor {
         switch kind {
         case .model:         return .systemBlue
@@ -43,11 +85,12 @@ enum RendererColors {
     static var nodeLabelText: NSColor { .labelColor }
     static var nodeLabelTextSelected: NSColor { .alternateSelectedControlTextColor }
 
-    // Node chip styling (used by the graph renderer).
-    private static let chipFillAlpha: CGFloat = 0.14
-    private static let chipBorderAlpha: CGFloat = 0.70
-    private static let untimedFillAlpha: CGFloat = 0.06
-    private static let untimedBorderAlpha: CGFloat = 0.25
+    // Node chip styling (used by the graph renderer). Alphas firm up under
+    // Increase Contrast.
+    private static var chipFillAlpha: CGFloat { increaseContrast ? 0.24 : 0.14 }
+    private static var chipBorderAlpha: CGFloat { increaseContrast ? 1.0 : 0.70 }
+    private static var untimedFillAlpha: CGFloat { increaseContrast ? 0.12 : 0.06 }
+    private static var untimedBorderAlpha: CGFloat { increaseContrast ? 0.55 : 0.25 }
 
     static func nodeChipFill(for kind: ResourceKind) -> NSColor {
         kindColor(for: kind).withAlphaComponent(chipFillAlpha)
@@ -87,7 +130,7 @@ enum RendererColors {
     }
 
     static func buildTimeChipBorder(score: Double) -> NSColor {
-        buildTimeColor(score: score).withAlphaComponent(0.85)
+        buildTimeColor(score: score).withAlphaComponent(increaseContrast ? 1.0 : 0.85)
     }
 
     static func untimedChipFill(for kind: ResourceKind) -> NSColor {

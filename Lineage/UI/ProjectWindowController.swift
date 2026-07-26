@@ -38,6 +38,8 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     private var criticalPathActive: Bool = false
     private weak var criticalPathButton: NSButton?
 
+    private var lastAnnouncedSubtitle: String = ""
+
     nonisolated private static let zoomToFitID = NSToolbarItem.Identifier("zoom-to-fit")
     nonisolated private static let searchID = NSToolbarItem.Identifier("search")
     nonisolated private static let filterID = NSToolbarItem.Identifier("filter")
@@ -709,14 +711,20 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         if v.criticalPathActive, let cp = v.criticalPath {
             parts.append("Critical path: \(Self.formatDuration(cp.totalSeconds)) · \(cp.nodes.count) node\(cp.nodes.count == 1 ? "" : "s")")
         }
+        let composed = parts.joined(separator: "  ·  ")
         if parts.isEmpty {
-            if let root = projectDocument?.projectRootURL?.lastPathComponent {
-                window?.subtitle = root
-            } else {
-                window?.subtitle = ""
-            }
+            window?.subtitle = projectDocument?.projectRootURL?.lastPathComponent ?? ""
         } else {
-            window?.subtitle = parts.joined(separator: "  ·  ")
+            window?.subtitle = composed
+        }
+
+        // The subtitle is the only place focus/search/critical-path counts are
+        // reported, and it's chrome VoiceOver won't read on its own.
+        if composed != lastAnnouncedSubtitle {
+            lastAnnouncedSubtitle = composed
+            if !composed.isEmpty {
+                graphView.announceAccessibilityStatus(composed.replacingOccurrences(of: "·", with: ","))
+            }
         }
     }
 

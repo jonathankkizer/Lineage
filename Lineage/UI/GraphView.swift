@@ -63,6 +63,22 @@ final class GraphView: NSView, NSMenuItemValidation {
 
         selectionObserverID = selection.addObserver { [weak self] model in
             self?.renderer.setSelection(model.selected, primary: model.primary)
+            self?.postAccessibilitySelectionChange()
+        }
+
+        // Increase Contrast / Differentiate Without Color feed border weights,
+        // alphas, and the downstream dash pattern — re-resolve when they change.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(accessibilityDisplayOptionsChanged(_:)),
+            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil
+        )
+    }
+
+    @objc private func accessibilityDisplayOptionsChanged(_ notification: Notification) {
+        effectiveAppearance.performAsCurrentDrawingAppearance { [renderer] in
+            renderer.refreshColors()
         }
     }
 
@@ -72,6 +88,7 @@ final class GraphView: NSView, NSMenuItemValidation {
         if let id = selectionObserverID {
             Task { @MainActor [selection] in selection.removeObserver(id) }
         }
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 
     override var isFlipped: Bool { true }
@@ -443,6 +460,118 @@ final class GraphView: NSView, NSMenuItemValidation {
             return
         }
         if toolTip != name { toolTip = name }
+    }
+
+    // MARK: - Accessibility
+
+    /// Cache keyed by node so repeated `accessibilityChildren()` calls hand
+    /// VoiceOver the same object identity for the same node — losing identity
+    /// mid-navigation makes VO drop its cursor.
+    private var accessibilityElementCache: [NodeID: GraphNodeAccessibilityElement] = [:]
+
+    override func isAccessibilityElement() -> Bool { true }
+
+    override func accessibilityRole() -> NSAccessibility.Role? { .group }
+
+    override func accessibilityLabel() -> String? { "Lineage graph" }
+
+    override func accessibilityRoleDescription() -> String? { "dbt lineage graph" }
+
+    /// Only vends nodes currently on screen. The full project can be thousands
+    /// of nodes; exposing all of them would make VoiceOver navigation useless
+    /// and doesn't match what a sighted user is actually looking at.
+    override func accessibilityChildren() -> [Any]? {
+        guard hasContent, let graph = currentGraph, let layout = currentLayout else { return [] }
+        let contentRect = viewport.contentRect(fromView: bounds)
+
+        var onscreen: [(NodeID, CGRect)] = []
+        for id in visibleNodes ?? Set(graph.nodes.keys) {
+            guard let rect = layout.rect(for: id), rect.intersects(contentRect) else { continue }
+            onscreen.append((id, rect))
+        }
+        // Reading order: left to right, then top to bottom.
+        onscreen.sort { a, b in
+            if a.1.minX != b.1.minX { return a.1.minX < b.1.minX }
+            if a.1.minY != b.1.minY { return a.1.minY < b.1.minY }
+            return a.0.rawValue < b.0.rawValue
+        }
+
+        accessibilityElementCache = accessibilityElementCache.filter { key, _ in
+            onscreen.contains { $0.0 == key }
+        }
+        return onscreen.map { id, _ in element(for: id) }
+    }
+
+    override func accessibilitySelectedChildren() -> [Any]? {
+        selection.selected
+            .filter { currentGraph?.nodes[$0] != nil }
+            .map { element(for: $0) }
+    }
+
+    // No accessibilityHitTest / accessibilityFocusedUIElement overrides: both are
+    // nonisolated in the SDK and return non-Sendable `Any?`, and AppKit already
+    // derives them correctly from the children's frames and their
+    // isAccessibilityFocused answers.
+
+    private func element(for id: NodeID) -> GraphNodeAccessibilityElement {
+        if let cached = accessibilityElementCache[id] { return cached }
+        let created = GraphNodeAccessibilityElement(nodeID: id, graphView: self)
+        accessibilityElementCache[id] = created
+        return created
+    }
+
+    func accessibilityNodeLabel(for id: NodeID) -> String {
+        currentGraph?.nodes[id]?.name ?? id.displayName
+    }
+
+    func accessibilityNodeValue(for id: NodeID) -> String {
+        guard let graph = currentGraph, let node = graph.nodes[id] else { return "" }
+        var parts: [String] = [node.kind.displayName]
+        if let schema = node.schema, !schema.isEmpty {
+            parts.append("in \(schema)")
+        }
+        let upstream = graph.parents(of: id).count
+        let downstream = graph.children(of: id).count
+        parts.append("\(upstream) upstream, \(downstream) downstream")
+        return parts.joined(separator: ", ")
+    }
+
+    func accessibilityNodeHelp(for id: NodeID) -> String? {
+        currentGraph?.nodes[id]?.originalFilePath
+    }
+
+    /// Node bounds in screen coordinates, which is what AppKit accessibility
+    /// frames are expressed in.
+    func accessibilityScreenRect(for id: NodeID) -> NSRect {
+        guard let layout = currentLayout,
+              let contentRect = layout.rect(for: id),
+              let window else { return .zero }
+        let viewRect = contentRect.applying(viewport.transform)
+        return window.convertToScreen(convert(viewRect, to: nil))
+    }
+
+    /// Tells VoiceOver the selection moved. Called from the selection observer
+    /// so keyboard DAG navigation is actually announced.
+    private func postAccessibilitySelectionChange() {
+        guard NSWorkspace.shared.isVoiceOverEnabled else { return }
+        NSAccessibility.post(element: self, notification: .selectedChildrenChanged)
+        if let primary = selection.primary, currentGraph?.nodes[primary] != nil {
+            NSAccessibility.post(element: element(for: primary), notification: .focusedUIElementChanged)
+        }
+    }
+
+    /// Speaks a transient status string (focus/search/critical-path summaries)
+    /// without moving the VoiceOver cursor.
+    func announceAccessibilityStatus(_ message: String) {
+        guard NSWorkspace.shared.isVoiceOverEnabled, let window else { return }
+        NSAccessibility.post(
+            element: window,
+            notification: .announcementRequested,
+            userInfo: [
+                .announcement: message,
+                .priority: NSAccessibilityPriorityLevel.medium.rawValue,
+            ]
+        )
     }
 
     // MARK: - Context menu
