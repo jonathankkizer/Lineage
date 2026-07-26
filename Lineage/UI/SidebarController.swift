@@ -29,6 +29,18 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
             default: return false
             }
         }
+
+        /// Stable identity for `autosaveExpandedItems`. Rows are rebuilt on every
+        /// document load, so AppKit needs a value it can match across launches.
+        var persistentKey: String {
+            switch kind {
+            case .all: return "all"
+            case .foldersGroup: return "group:folders"
+            case .tagsGroup: return "group:tags"
+            case .folder(let path): return "folder:\(path)"
+            case .tag(let name): return "tag:\(name)"
+            }
+        }
     }
 
     private let outlineView = NSOutlineView()
@@ -36,6 +48,7 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
     private var rootRows: [Row] = []
     private var allRow: Row?
     private var suppressSelectionChange = false
+    private var rowsByPersistentKey: [String: Row] = [:]
 
     var onScopeChange: ((FilterScope) -> Void)?
 
@@ -57,7 +70,9 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
         outlineView.dataSource = self
         outlineView.delegate = self
         outlineView.floatsGroupRows = false
-        outlineView.autosaveExpandedItems = false
+        outlineView.autosaveName = "ProjectSidebar"
+        outlineView.autosaveExpandedItems = true
+        outlineView.autosaveTableColumns = false
 
         scrollView.documentView = outlineView
         scrollView.hasVerticalScroller = true
@@ -100,11 +115,30 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
         if !folderTree.isEmpty { rootRows.append(foldersGroup) }
         if !tags.isEmpty { rootRows.append(tagsGroup) }
 
+        rowsByPersistentKey = [:]
+        indexRows(rootRows)
+
+        // `reloadData` re-applies saved disclosure state via autosaveExpandedItems.
         outlineView.reloadData()
-        for row in rootRows where row.isGroup {
-            outlineView.expandItem(row)
+
+        // Only force the section headers open the very first time the app runs;
+        // after that the user's own collapse choices are what autosave restored.
+        if !UserDefaults.standard.bool(forKey: Self.seededExpansionDefaultsKey) {
+            for row in rootRows where row.isGroup {
+                outlineView.expandItem(row)
+            }
+            UserDefaults.standard.set(true, forKey: Self.seededExpansionDefaultsKey)
         }
         selectVisualRow(rowMatching: scope)
+    }
+
+    private static let seededExpansionDefaultsKey = "Sidebar.seededDefaultExpansion"
+
+    private func indexRows(_ rows: [Row]) {
+        for row in rows {
+            rowsByPersistentKey[row.persistentKey] = row
+            indexRows(row.children)
+        }
     }
 
     private static func makeFolderRow(_ node: FolderNode) -> Row {
@@ -158,6 +192,18 @@ final class SidebarController: NSViewController, NSOutlineViewDataSource, NSOutl
     func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
         guard let row = item as? Row else { return false }
         return !row.children.isEmpty
+    }
+
+    // Disclosure-state persistence. `Row` instances are recreated on every
+    // document load, so autosaveExpandedItems needs a stable string to key on.
+
+    func outlineView(_ outlineView: NSOutlineView, persistentObjectForItem item: Any?) -> Any? {
+        (item as? Row)?.persistentKey
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, itemForPersistentObject object: Any) -> Any? {
+        guard let key = object as? String else { return nil }
+        return rowsByPersistentKey[key]
     }
 
     // MARK: - Delegate

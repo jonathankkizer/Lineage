@@ -32,6 +32,9 @@ final class GraphView: NSView, NSMenuItemValidation {
     private var viewport: Viewport = .identity
     private var hasContent = false
     private var needsInitialFit = false
+    /// A restored viewport that arrived before the view had real bounds. Applied
+    /// in `layout()` in place of the initial zoom-to-fit.
+    private var pendingRestoredViewport: Viewport?
     private var trackingArea: NSTrackingArea?
     private var magnifyRecognizer: NSMagnificationGestureRecognizer!
     private var contextMenuNode: NodeID?
@@ -84,7 +87,29 @@ final class GraphView: NSView, NSMenuItemValidation {
     override func layout() {
         super.layout()
         renderer.rootLayer.frame = bounds
+        if let restored = pendingRestoredViewport, bounds.width > 0, bounds.height > 0 {
+            pendingRestoredViewport = nil
+            needsInitialFit = false
+            viewport = restored
+            applyViewport()
+            return
+        }
         if needsInitialFit { zoomToFit() }
+    }
+
+    var currentViewport: Viewport { viewport }
+
+    /// Restores a viewport saved by window state restoration. Overrides the
+    /// initial zoom-to-fit rather than fighting it.
+    func restoreViewport(_ restored: Viewport) {
+        guard bounds.width > 0, bounds.height > 0 else {
+            pendingRestoredViewport = restored
+            return
+        }
+        pendingRestoredViewport = nil
+        needsInitialFit = false
+        viewport = restored
+        applyViewport()
     }
 
     override func viewDidChangeBackingProperties() {
@@ -332,6 +357,13 @@ final class GraphView: NSView, NSMenuItemValidation {
         revealInViewport(nodeID: next, layout: layout)
     }
 
+    /// Scrolls a node into view without changing selection. Used by Find Next /
+    /// Find Previous, which drive selection themselves.
+    func reveal(nodeID: NodeID, animationDuration: CFTimeInterval = 0.18) {
+        guard let layout = currentLayout else { return }
+        revealInViewport(nodeID: nodeID, layout: layout, animationDuration: animationDuration)
+    }
+
     private func revealInViewport(nodeID: NodeID, layout: GraphLayout, animationDuration: CFTimeInterval = 0.18) {
         guard let contentRect = layout.rect(for: nodeID) else { return }
         let viewRect = contentRect.applying(viewport.transform)
@@ -531,6 +563,17 @@ final class GraphView: NSView, NSMenuItemValidation {
         pasteboard.writeObjects(items)
     }
 
+    /// Selects everything currently on screen. Respects focus/search/filter
+    /// scope — "select all" of a focused subgraph means that subgraph, not the
+    /// dimmed-out remainder of the project.
+    override func selectAll(_ sender: Any?) {
+        guard hasContent, let graph = currentGraph else { return }
+        let candidates = visibleNodes ?? Set(graph.nodes.keys)
+        guard !candidates.isEmpty else { return }
+        let keepPrimary = selection.primary.flatMap { candidates.contains($0) ? $0 : nil }
+        selection.replace(with: candidates, primary: keepPrimary)
+    }
+
     /// Selected nodes present in the current graph, primary first, then the rest
     /// in stable `unique_id` order so copy output is deterministic.
     private func orderedSelection() -> [NodeID] {
@@ -557,6 +600,9 @@ final class GraphView: NSView, NSMenuItemValidation {
         }
         if menuItem.action == #selector(copy(_:)) {
             return hasContent && !selection.selected.isEmpty
+        }
+        if menuItem.action == #selector(selectAll(_:)) {
+            return hasContent && !(visibleNodes ?? currentGraph.map { Set($0.nodes.keys) } ?? []).isEmpty
         }
         return true
     }

@@ -17,6 +17,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var welcomeWindowController: WelcomeWindowController?
     private var updateCoordinator: UpdateCoordinator?
     private var connectGitHubController: ConnectGitHubWindowController?
+    private var settingsWindowController: SettingsWindowController?
+
+    private enum HelpURL {
+        static let help = "https://github.com/jonathankkizer/Lineage#readme"
+        static let shortcuts = "https://github.com/jonathankkizer/Lineage/blob/main/docs/shortcuts.md"
+        static let releases = "https://github.com/jonathankkizer/Lineage/releases"
+        static let issues = "https://github.com/jonathankkizer/Lineage/issues/new"
+    }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Register fallback values that take effect when the user has never set
@@ -121,8 +129,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         controller.window?.makeKeyAndOrderFront(nil)
     }
 
+    @objc func showSettings(_ sender: Any?) {
+        if settingsWindowController == nil {
+            settingsWindowController = SettingsWindowController()
+        }
+        settingsWindowController?.updateCoordinator = updateCoordinator
+        settingsWindowController?.showWindow(nil)
+        settingsWindowController?.window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc func openHelp(_ sender: Any?) {
+        open(HelpURL.help)
+    }
+
+    @objc func openKeyboardShortcuts(_ sender: Any?) {
+        open(HelpURL.shortcuts)
+    }
+
+    @objc func reportIssue(_ sender: Any?) {
+        open(HelpURL.issues)
+    }
+
     @objc func openReleasesPage(_ sender: Any?) {
-        guard let url = URL(string: "https://github.com/jonathankkizer/Lineage/releases") else { return }
+        open(HelpURL.releases)
+    }
+
+    private func open(_ string: String) {
+        guard let url = URL(string: string) else { return }
         NSWorkspace.shared.open(url)
     }
 
