@@ -17,6 +17,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var welcomeWindowController: WelcomeWindowController?
     private var updateCoordinator: UpdateCoordinator?
     private var connectGitHubController: ConnectGitHubWindowController?
+    private var settingsWindowController: SettingsWindowController?
+
+    private enum HelpURL {
+        static let help = "https://github.com/jonathankkizer/Lineage#readme"
+        static let shortcuts = "https://github.com/jonathankkizer/Lineage/blob/main/docs/shortcuts.md"
+        static let releases = "https://github.com/jonathankkizer/Lineage/releases"
+        static let issues = "https://github.com/jonathankkizer/Lineage/issues/new"
+    }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Register fallback values that take effect when the user has never set
@@ -29,6 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
         documentController = DbtDocumentController()
         NSApp.mainMenu = AppMenu.build()
+        // Lets other apps hand Lineage a folder via their Services menu. The
+        // consuming side of Services works through the responder chain and needs
+        // no registration.
+        NSApp.servicesProvider = self
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -121,8 +133,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         controller.window?.makeKeyAndOrderFront(nil)
     }
 
+    /// Services entry point, named by `NSMessage` in Info.plist. Opens whichever
+    /// dropped/selected folders Lineage can actually read and reports the rest.
+    @objc func openProjectFromService(
+        _ pasteboard: NSPasteboard,
+        userData: String?,
+        error: AutoreleasingUnsafeMutablePointer<NSString?>
+    ) {
+        let urls = ProjectDropSupport.openableURLs(in: pasteboard)
+        guard !urls.isEmpty else {
+            error.pointee = "That folder doesn't contain a dbt manifest." as NSString
+            return
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        ProjectDropSupport.open(urls)
+    }
+
+    @objc func showSettings(_ sender: Any?) {
+        if settingsWindowController == nil {
+            settingsWindowController = SettingsWindowController()
+        }
+        settingsWindowController?.updateCoordinator = updateCoordinator
+        settingsWindowController?.showWindow(nil)
+        settingsWindowController?.window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc func openHelp(_ sender: Any?) {
+        open(HelpURL.help)
+    }
+
+    @objc func openKeyboardShortcuts(_ sender: Any?) {
+        open(HelpURL.shortcuts)
+    }
+
+    @objc func reportIssue(_ sender: Any?) {
+        open(HelpURL.issues)
+    }
+
     @objc func openReleasesPage(_ sender: Any?) {
-        guard let url = URL(string: "https://github.com/jonathankkizer/Lineage/releases") else { return }
+        open(HelpURL.releases)
+    }
+
+    private func open(_ string: String) {
+        guard let url = URL(string: string) else { return }
         NSWorkspace.shared.open(url)
     }
 

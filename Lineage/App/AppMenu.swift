@@ -37,6 +37,12 @@ enum AppMenu {
         let menu = NSMenu()
         menu.addItem(withTitle: "About \(appName)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         menu.addItem(.separator())
+        // Update checking lives here rather than in Help — the App menu is where
+        // Mac users look for it.
+        menu.addItem(withTitle: "Check for Updates\u{2026}", action: #selector(LineageActions.checkForUpdates(_:)), keyEquivalent: "")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Settings\u{2026}", action: #selector(LineageActions.showSettings(_:)), keyEquivalent: ",")
+        menu.addItem(.separator())
         let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
         let servicesMenu = NSMenu(title: "Services")
         NSApp.servicesMenu = servicesMenu
@@ -61,8 +67,10 @@ enum AppMenu {
         menu.addItem(withTitle: "Open\u{2026}", action: #selector(NSDocumentController.openDocument(_:)), keyEquivalent: "o")
         menu.addItem(withTitle: "Open Demo Project", action: #selector(LineageActions.openDemoProject(_:)), keyEquivalent: "")
 
-        let connect = menu.addItem(withTitle: "Connect to GitHub Actions\u{2026}", action: #selector(LineageActions.connectToGitHub(_:)), keyEquivalent: "g")
-        connect.keyEquivalentModifierMask = [.command, .shift]
+        // No key equivalent: Shift-Cmd-G is Find Previous everywhere on the Mac,
+        // and connecting a repo is a once-per-project action that doesn't need
+        // to trap it.
+        menu.addItem(withTitle: "Connect to GitHub Actions\u{2026}", action: #selector(LineageActions.connectToGitHub(_:)), keyEquivalent: "")
 
         let openRecent = NSMenuItem(title: "Open Recent", action: nil, keyEquivalent: "")
         let openRecentMenu = NSMenu(title: "Open Recent")
@@ -74,6 +82,21 @@ enum AppMenu {
         menu.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Reload Project", action: #selector(LineageActions.reloadProject(_:)), keyEquivalent: "r")
+        menu.addItem(.separator())
+
+        let exportItem = NSMenuItem(title: "Export", action: nil, keyEquivalent: "")
+        let exportMenu = NSMenu(title: "Export")
+        exportMenu.addItem(withTitle: "Graph as PDF\u{2026}", action: #selector(LineageActions.exportGraphAsPDF(_:)), keyEquivalent: "")
+        exportMenu.addItem(withTitle: "Graph as PNG\u{2026}", action: #selector(LineageActions.exportGraphAsPNG(_:)), keyEquivalent: "")
+        exportItem.submenu = exportMenu
+        menu.addItem(exportItem)
+
+        menu.addItem(.separator())
+        // Page Setup conventionally takes Shift-Cmd-P, but Show Critical Path
+        // already owns it and is a far more frequent action here. Page Setup is
+        // rare enough to live without a key equivalent.
+        menu.addItem(withTitle: "Page Setup\u{2026}", action: #selector(LineageActions.runPageLayout(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: "Print\u{2026}", action: #selector(LineageActions.printGraph(_:)), keyEquivalent: "p")
 
         let item = NSMenuItem()
         item.submenu = menu
@@ -99,6 +122,10 @@ enum AppMenu {
         let findItem = NSMenuItem(title: "Find", action: nil, keyEquivalent: "")
         let findMenu = NSMenu(title: "Find")
         findMenu.addItem(withTitle: "Find\u{2026}", action: #selector(LineageActions.focusFilterField(_:)), keyEquivalent: "f")
+        findMenu.addItem(withTitle: "Find Next", action: #selector(LineageActions.findNext(_:)), keyEquivalent: "g")
+        let findPrevious = NSMenuItem(title: "Find Previous", action: #selector(LineageActions.findPrevious(_:)), keyEquivalent: "g")
+        findPrevious.keyEquivalentModifierMask = [.command, .shift]
+        findMenu.addItem(findPrevious)
         findItem.submenu = findMenu
         menu.addItem(findItem)
 
@@ -120,7 +147,6 @@ enum AppMenu {
         menu.addItem(toggleInspector)
 
         menu.addItem(withTitle: "Hide Edges", action: #selector(LineageActions.toggleShowAllEdges(_:)), keyEquivalent: "")
-        menu.addItem(withTitle: "Navigation Beep", action: #selector(LineageActions.toggleNavigationBeep(_:)), keyEquivalent: "")
         menu.addItem(.separator())
 
         let criticalPath = NSMenuItem(title: "Show Critical Path", action: #selector(LineageActions.toggleCriticalPath(_:)), keyEquivalent: "p")
@@ -152,6 +178,8 @@ enum AppMenu {
         menu.addItem(showItem)
 
         menu.addItem(.separator())
+        menu.addItem(withTitle: "Customize Toolbar\u{2026}", action: #selector(LineageActions.customizeToolbar(_:)), keyEquivalent: "")
+        menu.addItem(.separator())
         let fullScreen = menu.addItem(withTitle: "Enter Full Screen", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
         fullScreen.keyEquivalentModifierMask = [.command, .control]
 
@@ -177,10 +205,12 @@ enum AppMenu {
 
     private static func helpMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "Help")
-        menu.addItem(withTitle: "Check for Updates\u{2026}", action: #selector(LineageActions.checkForUpdates(_:)), keyEquivalent: "")
-        menu.addItem(withTitle: "Automatically Check for Updates", action: #selector(LineageActions.toggleAutomaticUpdateChecks(_:)), keyEquivalent: "")
+        let help = menu.addItem(withTitle: "Lineage Help", action: #selector(LineageActions.openHelp(_:)), keyEquivalent: "?")
+        help.keyEquivalentModifierMask = [.command]
+        menu.addItem(withTitle: "Keyboard Shortcuts", action: #selector(LineageActions.openKeyboardShortcuts(_:)), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Lineage GitHub Releases", action: #selector(LineageActions.openReleasesPage(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: "Release Notes", action: #selector(LineageActions.openReleasesPage(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: "Report an Issue\u{2026}", action: #selector(LineageActions.reportIssue(_:)), keyEquivalent: "")
         NSApp.helpMenu = menu
 
         let item = NSMenuItem()

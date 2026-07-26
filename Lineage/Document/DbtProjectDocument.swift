@@ -117,6 +117,19 @@ class DbtProjectDocument: NSDocument {
         }
     }
 
+    /// Applies a filter recovered from window state restoration. Before the
+    /// first load there's no graph to re-filter, so this just seeds the value
+    /// and lets the initial pipeline pick it up — avoiding a wasted second
+    /// filter-and-layout pass right after launch.
+    @MainActor
+    func restoreFilter(_ filter: NodeFilter) {
+        guard fullGraph != nil else {
+            nodeFilter = filter
+            return
+        }
+        updateFilter(filter)
+    }
+
     @MainActor
     func updateFilter(_ newFilter: NodeFilter) {
         guard newFilter != nodeFilter else { return }

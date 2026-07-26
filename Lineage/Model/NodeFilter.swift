@@ -1,6 +1,6 @@
 import Foundation
 
-nonisolated enum FilterScope: Equatable, Hashable, Sendable {
+nonisolated enum FilterScope: Equatable, Hashable, Sendable, Codable {
     case all
     case folder(String)
     case tag(String)
@@ -14,7 +14,7 @@ nonisolated enum FilterScope: Equatable, Hashable, Sendable {
     }
 }
 
-nonisolated struct NodeFilter: Equatable, Hashable, Sendable {
+nonisolated struct NodeFilter: Equatable, Hashable, Sendable, Codable {
     var showTests: Bool
     var showSources: Bool
     var showOrphanSources: Bool

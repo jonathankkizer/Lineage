@@ -9,6 +9,9 @@ final class GitHubConnectionDocument: DbtProjectDocument {
 
     nonisolated static let typeIdentifier = "com.kizersolutions.lineage.connection"
 
+    /// Same type as an exported `UTType`, for open-panel filtering.
+    nonisolated static let contentType = UTType(exportedAs: typeIdentifier, conformingTo: .json)
+
     nonisolated override class var readableTypes: [String] {
         [typeIdentifier]
     }

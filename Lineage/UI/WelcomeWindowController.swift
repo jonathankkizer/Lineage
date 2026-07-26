@@ -39,6 +39,7 @@ final class WelcomeWindowController: NSWindowController, NSTableViewDataSource, 
 
         configureContent()
         configureCheckbox()
+        configureDropTarget()
         reloadRecents()
 
         // Auto-dismiss when any document window becomes main — Mac convention
@@ -249,6 +250,23 @@ final class WelcomeWindowController: NSWindowController, NSTableViewDataSource, 
         ])
     }
 
+    // MARK: - Finder drops
+
+    private func configureDropTarget() {
+        guard let contentView = window?.contentView else { return }
+        let dropView = ProjectDropView()
+        dropView.translatesAutoresizingMaskIntoConstraints = false
+        // Behind everything: the buttons and recents table stay clickable, and a
+        // drag anywhere over the window still lands on this view.
+        contentView.addSubview(dropView, positioned: .below, relativeTo: nil)
+        NSLayoutConstraint.activate([
+            dropView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            dropView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            dropView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            dropView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+        ])
+    }
+
     // MARK: - Recent documents
 
     func reloadRecents() {
@@ -347,5 +365,63 @@ final class WelcomeWindowController: NSWindowController, NSTableViewDataSource, 
             .contains { $0.window === other }
         guard isDocumentWindow else { return }
         window.performClose(nil)
+    }
+}
+
+/// Full-bleed drop target behind the Welcome window's content. Dropping a dbt
+/// project folder here opens it, same as dropping it on the Dock icon.
+@MainActor
+private final class ProjectDropView: NSView {
+
+    private var isHighlighted = false {
+        didSet {
+            guard isHighlighted != oldValue else { return }
+            needsDisplay = true
+        }
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        registerForDraggedTypes(ProjectDropSupport.acceptedTypes)
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard isHighlighted else { return }
+        let inset = bounds.insetBy(dx: 10, dy: 10)
+        let path = NSBezierPath(roundedRect: inset, xRadius: 12, yRadius: 12)
+        NSColor.controlAccentColor.withAlphaComponent(0.08).setFill()
+        path.fill()
+        NSColor.controlAccentColor.setStroke()
+        path.lineWidth = 3
+        path.stroke()
+    }
+
+    override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
+        let operation = ProjectDropSupport.operation(for: sender.draggingPasteboard)
+        isHighlighted = operation != []
+        return operation
+    }
+
+    override func draggingUpdated(_ sender: any NSDraggingInfo) -> NSDragOperation {
+        ProjectDropSupport.operation(for: sender.draggingPasteboard)
+    }
+
+    override func draggingExited(_ sender: (any NSDraggingInfo)?) {
+        isHighlighted = false
+    }
+
+    override func draggingEnded(_ sender: any NSDraggingInfo) {
+        isHighlighted = false
+    }
+
+    override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
+        isHighlighted = false
+        let urls = ProjectDropSupport.openableURLs(in: sender.draggingPasteboard)
+        guard !urls.isEmpty else { return false }
+        ProjectDropSupport.open(urls)
+        return true
     }
 }

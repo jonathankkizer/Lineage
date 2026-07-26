@@ -73,6 +73,7 @@ final class CALayerGraphRenderer: GraphRenderer {
 
         edgeDownstreamLayer.fillColor = nil
         edgeDownstreamLayer.strokeColor = RendererColors.edgeDownstream.cgColor
+        edgeDownstreamLayer.lineDashPattern = RendererColors.downstreamEdgeDash
         edgeDownstreamLayer.lineWidth = 1.5
         edgeDownstreamLayer.lineJoin = .round
         edgeDownstreamLayer.lineCap = .round
@@ -323,6 +324,7 @@ final class CALayerGraphRenderer: GraphRenderer {
         edgeLayer.strokeColor = RendererColors.edge.cgColor
         edgeUpstreamLayer.strokeColor = RendererColors.edgeUpstream.cgColor
         edgeDownstreamLayer.strokeColor = RendererColors.edgeDownstream.cgColor
+        edgeDownstreamLayer.lineDashPattern = RendererColors.downstreamEdgeDash
         selectionRingLayer.strokeColor = RendererColors.selection.cgColor
         marqueeLayer.fillColor = NSColor.controlAccentColor.withAlphaComponent(0.12).cgColor
         marqueeLayer.strokeColor = RendererColors.selection.cgColor
@@ -402,9 +404,21 @@ final class CALayerGraphRenderer: GraphRenderer {
         switch lastLOD {
         case .detail:
             let s = resolveChipStyle(id: id, kind: kind)
-            return BaseStyle(fill: s.fill.cgColor, border: s.border.cgColor, borderWidth: 1, showLabel: true)
+            let width: CGFloat
+            if coloringMode == .buildTime, let score = buildTimings.colorScore[id] {
+                width = RendererColors.buildTimeBorderWidth(score: score)
+            } else {
+                width = RendererColors.chipBorderWidth
+            }
+            return BaseStyle(fill: s.fill.cgColor, border: s.border.cgColor, borderWidth: width, showLabel: true)
         case .blocks:
-            return BaseStyle(fill: solidColor(id: id, kind: kind).cgColor, border: NSColor.clear.cgColor, borderWidth: 0, showLabel: false)
+            // Blocks carry no label or icon, so under Increase Contrast give them
+            // an outline — otherwise adjacent same-hue blocks merge visually.
+            let border: CGColor = RendererColors.increaseContrast
+                ? NSColor.labelColor.withAlphaComponent(0.5).cgColor
+                : NSColor.clear.cgColor
+            let width: CGFloat = RendererColors.increaseContrast ? 1 : 0
+            return BaseStyle(fill: solidColor(id: id, kind: kind).cgColor, border: border, borderWidth: width, showLabel: false)
         }
     }
 
@@ -573,6 +587,53 @@ final class CALayerGraphRenderer: GraphRenderer {
         marqueeLayer.path = path
     }
 
+    /// Renders the whole graph for export/print.
+    ///
+    /// Reuses the live layer tree rather than building a parallel drawing path,
+    /// so an export always matches what's on screen. Everything it perturbs —
+    /// the root frame, the viewport transform, the zoom tier, and the marquee —
+    /// is saved and put back, and the whole thing runs inside one non-animating
+    /// transaction so no intermediate state ever reaches the screen.
+    func drawForExport(in context: CGContext, scale: CGFloat) {
+        guard contentBounds.width > 0, contentBounds.height > 0 else { return }
+
+        let savedRootFrame = rootLayer.frame
+        let savedTransform = contentLayer.affineTransform()
+        let savedZoom = zoomScale
+        let savedMarquee = marqueeLayer.path
+        let savedMasks = rootLayer.masksToBounds
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
+        // Always export at the detail tier — an export at a "blocks" zoom would
+        // silently drop every label.
+        setLevelOfDetail(zoomScale: 1)
+        marqueeLayer.path = nil
+        rootLayer.masksToBounds = false
+        rootLayer.frame = CGRect(
+            origin: .zero,
+            size: CGSize(width: contentBounds.width * scale, height: contentBounds.height * scale)
+        )
+        contentLayer.setAffineTransform(
+            CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: -contentBounds.minX, y: -contentBounds.minY)
+        )
+        CATransaction.commit()
+        CATransaction.flush()
+
+        rootLayer.render(in: context)
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        rootLayer.frame = savedRootFrame
+        rootLayer.masksToBounds = savedMasks
+        contentLayer.setAffineTransform(savedTransform)
+        marqueeLayer.path = savedMarquee
+        CATransaction.commit()
+        setLevelOfDetail(zoomScale: savedZoom)
+    }
+
     func nodeID(atContentPoint point: CGPoint) -> NodeID? {
         index?.query(point: point)
     }
@@ -711,10 +772,10 @@ final class CALayerGraphRenderer: GraphRenderer {
                 layer.borderWidth = 2
             } else if upstreamNeighbors.contains(id) {
                 layer.borderColor = RendererColors.edgeUpstream.cgColor
-                layer.borderWidth = 1.5
+                layer.borderWidth = RendererColors.upstreamNeighborBorderWidth
             } else if downstreamNeighbors.contains(id) {
                 layer.borderColor = RendererColors.edgeDownstream.cgColor
-                layer.borderWidth = 1.5
+                layer.borderWidth = RendererColors.downstreamNeighborBorderWidth
             } else if let kind = graph?.nodes[id]?.kind {
                 let s = baseStyle(id: id, kind: kind)
                 layer.borderColor = s.border

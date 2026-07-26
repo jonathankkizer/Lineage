@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 @MainActor
 final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWindowDelegate, NSMenuItemValidation, NSSearchFieldDelegate {
@@ -16,22 +17,29 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     private var inspectorSplitItem: NSSplitViewItem!
 
     private let loadingOverlay = LoadingOverlayView()
-    private var inspectorVisible = true
+    private var inspectorVisible = ViewPreferences.inspectorVisible
     private var loadingShowTask: Task<Void, Never>?
     private static let loadingDeferDelay: Duration = .milliseconds(400)
+
+    /// View state decoded by `restoreState(with:)`, held until the document
+    /// finishes its async load. Restoration and loading race; whichever lands
+    /// second calls `applyRestoredStateIfReady()`.
+    private var pendingRestoredState: RestoredState?
 
     private var searchQuery: String = ""
     private weak var searchToolbarItem: NSSearchToolbarItem?
     private weak var filterToolbarButton: NSButton?
     private var filterPopover: NSPopover?
 
-    private var coloringMode: NodeColoring = .kind
+    private var coloringMode: NodeColoring = ViewPreferences.coloringMode
     private weak var coloringSegmented: NSSegmentedControl?
 
     private weak var layoutSegmented: NSSegmentedControl?
 
     private var criticalPathActive: Bool = false
     private weak var criticalPathButton: NSButton?
+
+    private var lastAnnouncedSubtitle: String = ""
 
     nonisolated private static let zoomToFitID = NSToolbarItem.Identifier("zoom-to-fit")
     nonisolated private static let searchID = NSToolbarItem.Identifier("search")
@@ -60,11 +68,24 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         }
         window.title = document.displayName ?? "dbt Project"
         window.isRestorable = true
-        window.setFrameAutosaveName("ProjectWindow")
+        window.identifier = NSUserInterfaceItemIdentifier("ProjectWindow")
+        // Per-document autosave key. A single shared name made every project
+        // window fight over one saved frame and open exactly stacked.
+        // `setFrameAutosaveName` only names the key — restoring is a separate
+        // `setFrameUsingName` call, and it has to happen first.
+        let autosaveName = Self.frameAutosaveName(for: document)
+        let didRestoreFrame = window.setFrameUsingName(autosaveName)
+        window.setFrameAutosaveName(autosaveName)
 
         super.init(window: nil)
         self.window = window
         window.delegate = self
+
+        // First time this project has been opened: cascade rather than landing
+        // on top of whatever is already on screen.
+        if !didRestoreFrame {
+            Self.cascadePoint = window.cascadeTopLeft(from: Self.cascadePoint)
+        }
 
         configureSplitView()
         configureToolbar()
@@ -101,9 +122,19 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
 
     required init?(coder: NSCoder) { nil }
 
+    private static var cascadePoint = NSPoint.zero
+
+    private static func frameAutosaveName(for document: DbtProjectDocument) -> String {
+        guard let url = document.fileURL ?? document.projectRootURL else { return "ProjectWindow" }
+        return "ProjectWindow.\(StableKey.forURL(url))"
+    }
+
     private func configureSplitView() {
         let splitController = NSSplitViewController()
         splitController.view.translatesAutoresizingMaskIntoConstraints = false
+        // Shared across windows on purpose: sidebar and inspector widths are an
+        // app-wide preference in Finder/Xcode/Mail, not a per-window one.
+        splitController.splitView.autosaveName = "ProjectSplitView"
 
         sidebarSplitItem = NSSplitViewItem(sidebarWithViewController: sidebarController)
         sidebarSplitItem.canCollapse = true
@@ -127,11 +158,15 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         inspectorSplitItem.preferredThicknessFraction = 0.25
         inspectorSplitItem.holdingPriority = NSLayoutConstraint.Priority(260)
         splitController.addSplitViewItem(inspectorSplitItem)
+        inspectorSplitItem.isCollapsed = !inspectorVisible
 
         contentViewController = splitController
 
         sidebarController.onScopeChange = { [weak self] scope in
             self?.sidebarScopeChanged(scope)
+        }
+        sidebarController.projectRootProvider = { [weak self] in
+            self?.projectDocument?.projectRootURL
         }
     }
 
@@ -150,12 +185,20 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     }
 
     private func configureToolbar() {
-        let toolbar = NSToolbar(identifier: "ProjectToolbar.v2")
+        // Identifier bumped alongside re-enabling autosave: a stale saved
+        // configuration under the old identifier would otherwise override the
+        // programmatic display mode below. Set the default first, then let
+        // autosave take over so the user's own customisation wins from here on.
+        let toolbar = NSToolbar(identifier: "ProjectToolbar.v3")
         toolbar.delegate = self
         toolbar.allowsUserCustomization = true
-        toolbar.autosavesConfiguration = false
-        window?.toolbar = toolbar
         toolbar.displayMode = .iconOnly
+        toolbar.autosavesConfiguration = true
+        window?.toolbar = toolbar
+    }
+
+    @objc func customizeToolbar(_ sender: Any?) {
+        window?.toolbar?.runCustomizationPalette(sender)
     }
 
     private func configureLoadingOverlay() {
@@ -236,7 +279,12 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             criticalPathActive = false
         }
         criticalPathButton?.state = criticalPathActive ? .on : .off
-        applyCurrentFocus(animated: false, reframe: false)
+
+        if pendingRestoredState != nil {
+            applyRestoredStateIfReady()
+        } else {
+            applyCurrentFocus(animated: false, reframe: false)
+        }
     }
 
     func documentDidFailLoading(_ error: Error) {
@@ -396,7 +444,9 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
 
     @objc func toggleInspector(_ sender: Any?) {
         inspectorVisible.toggle()
+        ViewPreferences.inspectorVisible = inspectorVisible
         inspectorSplitItem.animator().isCollapsed = !inspectorVisible
+        invalidateRestorableState()
     }
 
     @objc func toggleShowAllEdges(_ sender: Any?) {
@@ -411,8 +461,10 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
     private func setColoringMode(_ mode: NodeColoring) {
         guard mode != coloringMode else { return }
         coloringMode = mode
+        ViewPreferences.coloringMode = mode
         coloringSegmented?.selectedSegment = mode.rawValue
         graphView.setColoring(mode)
+        invalidateRestorableState()
     }
 
     // MARK: - Layout
@@ -450,6 +502,42 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         searchToolbarItem?.searchField.stringValue = ""
         filterPopover?.performClose(nil)
         document.reload()
+    }
+
+    // MARK: - Export and print
+
+    private var exportBaseName: String {
+        projectDocument?.projectRootURL?.lastPathComponent ?? "Lineage Graph"
+    }
+
+    @objc func exportGraphAsPDF(_ sender: Any?) {
+        GraphExport.runExportPanel(
+            renderer: graphView.renderer,
+            window: window,
+            suggestedName: exportBaseName,
+            type: .pdf
+        )
+    }
+
+    @objc func exportGraphAsPNG(_ sender: Any?) {
+        GraphExport.runExportPanel(
+            renderer: graphView.renderer,
+            window: window,
+            suggestedName: exportBaseName,
+            type: .png
+        )
+    }
+
+    @objc func printGraph(_ sender: Any?) {
+        GraphExport.print(renderer: graphView.renderer, window: window, jobTitle: exportBaseName)
+    }
+
+    @objc func runPageLayout(_ sender: Any?) {
+        guard let window else {
+            NSPageLayout().runModal(with: NSPrintInfo.shared)
+            return
+        }
+        NSPageLayout().beginSheet(with: NSPrintInfo.shared, modalFor: window, delegate: nil, didEnd: nil, contextInfo: nil)
     }
 
     // MARK: - Filter actions
@@ -648,6 +736,7 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         graphView.applyFocus(scope: v.scope, animationDuration: duration, reframe: reframe)
         graphView.setVisibleNodes(v.scope?.nodes)
         updateSubtitle(v)
+        invalidateRestorableState()
     }
 
     private func updateSubtitle(_ v: Visibility) {
@@ -662,14 +751,20 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         if v.criticalPathActive, let cp = v.criticalPath {
             parts.append("Critical path: \(Self.formatDuration(cp.totalSeconds)) · \(cp.nodes.count) node\(cp.nodes.count == 1 ? "" : "s")")
         }
+        let composed = parts.joined(separator: "  ·  ")
         if parts.isEmpty {
-            if let root = projectDocument?.projectRootURL?.lastPathComponent {
-                window?.subtitle = root
-            } else {
-                window?.subtitle = ""
-            }
+            window?.subtitle = projectDocument?.projectRootURL?.lastPathComponent ?? ""
         } else {
-            window?.subtitle = parts.joined(separator: "  ·  ")
+            window?.subtitle = composed
+        }
+
+        // The subtitle is the only place focus/search/critical-path counts are
+        // reported, and it's chrome VoiceOver won't read on its own.
+        if composed != lastAnnouncedSubtitle {
+            lastAnnouncedSubtitle = composed
+            if !composed.isEmpty {
+                graphView.announceAccessibilityStatus(composed.replacingOccurrences(of: "·", with: ","))
+            }
         }
     }
 
@@ -715,6 +810,42 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         window?.makeFirstResponder(field)
     }
 
+    @objc func findNext(_ sender: Any?) { stepSearchMatch(by: 1) }
+    @objc func findPrevious(_ sender: Any?) { stepSearchMatch(by: -1) }
+
+    /// Search matches in reading order across the canvas — left to right, then
+    /// top to bottom — so stepping through them tracks the layout rather than
+    /// jumping around by unique_id.
+    private func searchMatches() -> [NodeID] {
+        guard !searchQuery.isEmpty,
+              let graph = projectDocument?.graph,
+              let layout = projectDocument?.graphLayout,
+              let selector = NodeSelector.parse(searchQuery) else { return [] }
+        return selector.apply(to: graph).nodes.sorted { a, b in
+            let ra = layout.rect(for: a) ?? .zero
+            let rb = layout.rect(for: b) ?? .zero
+            if ra.minX != rb.minX { return ra.minX < rb.minX }
+            if ra.minY != rb.minY { return ra.minY < rb.minY }
+            return a.rawValue < b.rawValue
+        }
+    }
+
+    private func stepSearchMatch(by delta: Int) {
+        let matches = searchMatches()
+        guard !matches.isEmpty else {
+            if NavigationSoundPreference.isEnabled { NSSound.beep() }
+            return
+        }
+        let next: NodeID
+        if let index = selection.primary.flatMap({ matches.firstIndex(of: $0) }) {
+            next = matches[(index + delta + matches.count) % matches.count]
+        } else {
+            next = delta > 0 ? matches[0] : matches[matches.count - 1]
+        }
+        selection.replace(with: next)
+        graphView.reveal(nodeID: next)
+    }
+
     // MARK: - Filter popover
 
     @objc func showFilterPopover(_ sender: Any?) {
@@ -757,6 +888,146 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
         applyCurrentFocus(animated: true, reframe: true)
     }
 
+    // MARK: - State restoration
+
+    private struct RestoredState {
+        var viewport: Viewport?
+        var searchQuery: String = ""
+        var selection: [NodeID] = []
+        var primary: NodeID?
+        var focus: FocusEntry?
+        var criticalPathActive = false
+    }
+
+    private enum RestoreKey {
+        static let viewportX = "viewport.x"
+        static let viewportY = "viewport.y"
+        static let viewportScale = "viewport.scale"
+        static let hasViewport = "viewport.present"
+        static let search = "search.query"
+        static let selection = "selection.ids"
+        static let primary = "selection.primary"
+        static let focusAnchor = "focus.anchor"
+        static let focusUp = "focus.upstreamHops"
+        static let focusDown = "focus.downstreamHops"
+        static let criticalPath = "criticalPath.active"
+        static let coloring = "coloring.mode"
+        static let inspector = "inspector.visible"
+        static let filter = "filter.payload"
+    }
+
+    override func encodeRestorableState(with coder: NSCoder) {
+        super.encodeRestorableState(with: coder)
+        guard ViewPreferences.restoresWindowState else { return }
+
+        let v = graphView.currentViewport
+        coder.encode(true, forKey: RestoreKey.hasViewport)
+        coder.encode(Double(v.translation.x), forKey: RestoreKey.viewportX)
+        coder.encode(Double(v.translation.y), forKey: RestoreKey.viewportY)
+        coder.encode(Double(v.scale), forKey: RestoreKey.viewportScale)
+
+        coder.encode(searchQuery, forKey: RestoreKey.search)
+        // Newline-joined rather than an array: unique_ids never contain newlines,
+        // and a plain String sidesteps NSSecureCoding's array-of-class dance.
+        coder.encode(selection.selected.map(\.rawValue).sorted().joined(separator: "\n"), forKey: RestoreKey.selection)
+        coder.encode(selection.primary?.rawValue, forKey: RestoreKey.primary)
+
+        if let entry = focusHistory.current {
+            coder.encode(entry.anchor.rawValue, forKey: RestoreKey.focusAnchor)
+            coder.encode(entry.upstreamHops, forKey: RestoreKey.focusUp)
+            coder.encode(entry.downstreamHops, forKey: RestoreKey.focusDown)
+        }
+
+        coder.encode(criticalPathActive, forKey: RestoreKey.criticalPath)
+        coder.encode(coloringMode.rawValue, forKey: RestoreKey.coloring)
+        coder.encode(inspectorVisible, forKey: RestoreKey.inspector)
+
+        if let filter = projectDocument?.nodeFilter,
+           let data = try? JSONEncoder().encode(filter) {
+            coder.encode(data, forKey: RestoreKey.filter)
+        }
+    }
+
+    override func restoreState(with coder: NSCoder) {
+        super.restoreState(with: coder)
+        guard ViewPreferences.restoresWindowState else { return }
+
+        var state = RestoredState()
+        if coder.decodeBool(forKey: RestoreKey.hasViewport) {
+            state.viewport = Viewport(
+                translation: CGPoint(
+                    x: coder.decodeDouble(forKey: RestoreKey.viewportX),
+                    y: coder.decodeDouble(forKey: RestoreKey.viewportY)
+                ),
+                scale: coder.decodeDouble(forKey: RestoreKey.viewportScale)
+            )
+        }
+        state.searchQuery = coder.decodeObject(of: NSString.self, forKey: RestoreKey.search) as? String ?? ""
+        let joinedIDs = coder.decodeObject(of: NSString.self, forKey: RestoreKey.selection) as? String ?? ""
+        state.selection = joinedIDs
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map { NodeID(rawValue: String($0)) }
+        if let rawPrimary = coder.decodeObject(of: NSString.self, forKey: RestoreKey.primary) as? String {
+            state.primary = NodeID(rawValue: rawPrimary)
+        }
+        if let rawAnchor = coder.decodeObject(of: NSString.self, forKey: RestoreKey.focusAnchor) as? String {
+            state.focus = FocusEntry(
+                anchor: NodeID(rawValue: rawAnchor),
+                upstreamHops: coder.decodeInteger(forKey: RestoreKey.focusUp),
+                downstreamHops: coder.decodeInteger(forKey: RestoreKey.focusDown)
+            )
+        }
+        state.criticalPathActive = coder.decodeBool(forKey: RestoreKey.criticalPath)
+
+        // Chrome can be applied immediately — it doesn't depend on the graph.
+        if coder.containsValue(forKey: RestoreKey.coloring) {
+            setColoringMode(NodeColoring(rawValue: coder.decodeInteger(forKey: RestoreKey.coloring)) ?? .kind)
+        }
+        if coder.containsValue(forKey: RestoreKey.inspector) {
+            let visible = coder.decodeBool(forKey: RestoreKey.inspector)
+            if visible != inspectorVisible {
+                inspectorVisible = visible
+                inspectorSplitItem.isCollapsed = !visible
+            }
+        }
+        if let data = coder.decodeObject(of: NSData.self, forKey: RestoreKey.filter) as? Data,
+           let filter = try? JSONDecoder().decode(NodeFilter.self, from: data) {
+            projectDocument?.restoreFilter(filter)
+        }
+
+        pendingRestoredState = state
+        applyRestoredStateIfReady()
+    }
+
+    /// Restoration and the document's async load race each other. Both call
+    /// this; it no-ops until the graph exists, then consumes the state once.
+    private func applyRestoredStateIfReady() {
+        guard let state = pendingRestoredState else { return }
+        guard let graph = projectDocument?.graph else { return }
+        pendingRestoredState = nil
+
+        criticalPathActive = state.criticalPathActive && projectDocument?.criticalPath != nil
+        criticalPathButton?.state = criticalPathActive ? .on : .off
+
+        searchQuery = state.searchQuery
+        searchToolbarItem?.searchField.stringValue = state.searchQuery
+
+        // Nodes can disappear between launches (the manifest was rebuilt, or a
+        // filter now hides them) — drop anything that no longer resolves.
+        let surviving = state.selection.filter { graph.nodes[$0] != nil }
+        if !surviving.isEmpty {
+            selection.replace(with: Set(surviving), primary: state.primary.flatMap { graph.nodes[$0] != nil ? $0 : nil })
+        }
+        if let focus = state.focus, graph.nodes[focus.anchor] != nil {
+            focusHistory.restore(focus)
+        }
+
+        applyCurrentFocus(animated: false, reframe: state.viewport == nil)
+        if let viewport = state.viewport, viewport.scale > 0 {
+            graphView.restoreViewport(viewport)
+        }
+    }
+
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         guard let action = menuItem.action else { return true }
         let filter = projectDocument?.nodeFilter ?? .default
@@ -797,8 +1068,14 @@ final class ProjectWindowController: NSWindowController, NSToolbarDelegate, NSWi
             return !(projectDocument?.nodeFilter ?? .default).isDefault
         case #selector(focusFilterField(_:)):
             return searchToolbarItem?.searchField != nil
+        case #selector(findNext(_:)), #selector(findPrevious(_:)):
+            return !searchQuery.isEmpty && projectDocument?.graph != nil
+        case #selector(customizeToolbar(_:)):
+            return window?.toolbar != nil
         case #selector(reloadProject(_:)):
             return projectDocument?.manifestURL != nil
+        case #selector(exportGraphAsPDF(_:)), #selector(exportGraphAsPNG(_:)), #selector(printGraph(_:)):
+            return projectDocument?.graphLayout != nil
         case #selector(toggleCriticalPath(_:)):
             let available = projectDocument?.criticalPath != nil
             menuItem.state = (available && criticalPathActive) ? .on : .off

@@ -11,8 +11,16 @@ import AppKit
     func openDemoProject(_ sender: Any?)
     func showWelcomeWindow(_ sender: Any?)
     func connectToGitHub(_ sender: Any?)
+    func exportGraphAsPDF(_ sender: Any?)
+    func exportGraphAsPNG(_ sender: Any?)
+    func printGraph(_ sender: Any?)
+    func runPageLayout(_ sender: Any?)
+
+    // App
+    func showSettings(_ sender: Any?)
 
     // View / zoom
+    func customizeToolbar(_ sender: Any?)
     func zoomInGraph(_ sender: Any?)
     func zoomOutGraph(_ sender: Any?)
     func resetZoomGraph(_ sender: Any?)
@@ -32,6 +40,8 @@ import AppKit
 
     // Search / focus
     func focusFilterField(_ sender: Any?)
+    func findNext(_ sender: Any?)
+    func findPrevious(_ sender: Any?)
     func focusOnSelection(_ sender: Any?)
     func clearFocus(_ sender: Any?)
     func focusBack(_ sender: Any?)
@@ -40,7 +50,10 @@ import AppKit
     func contractFocus(_ sender: Any?)
 
     // Help
+    func openHelp(_ sender: Any?)
+    func openKeyboardShortcuts(_ sender: Any?)
     func openReleasesPage(_ sender: Any?)
+    func reportIssue(_ sender: Any?)
     func checkForUpdates(_ sender: Any?)
     func toggleAutomaticUpdateChecks(_ sender: Any?)
 

@@ -33,6 +33,15 @@ final class FocusHistory {
         forward.removeAll(keepingCapacity: true)
     }
 
+    /// Seeds the history from restored window state. Deliberately drops the
+    /// back/forward stacks — restoring where the user was is useful, restoring
+    /// how they got there is not.
+    func restore(_ entry: FocusEntry?) {
+        back.removeAll(keepingCapacity: true)
+        forward.removeAll(keepingCapacity: true)
+        current = entry
+    }
+
     func adjustHops(upstream: Int? = nil, downstream: Int? = nil) {
         guard let cur = current else { return }
         let up = clampHops(upstream ?? cur.upstreamHops)
