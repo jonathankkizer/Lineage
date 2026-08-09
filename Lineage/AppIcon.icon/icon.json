@@ -1,0 +1,131 @@
+{
+  "fill-specializations" : [
+    {
+      "value" : {
+        "linear-gradient" : [
+          "display-p3:0.14510,0.16471,0.20784,1.00000",
+          "srgb:0.05098,0.05882,0.08235,1.00000"
+        ],
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 0.7
+          }
+        }
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "linear-gradient" : [
+          "display-p3:0.09804,0.11373,0.14510,1.00000",
+          "srgb:0.02745,0.03137,0.04314,1.00000"
+        ],
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 0.7
+          }
+        }
+      }
+    }
+  ],
+  "groups" : [
+    {
+      "blur-material" : 0,
+      "hidden" : false,
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "image-name" : "3-lens-rim.svg",
+          "name" : "3-lens-rim",
+          "position" : {
+            "scale" : 1.38,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "name" : "rim",
+      "opacity" : 1,
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 1
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    },
+    {
+      "blur-material" : 0,
+      "layers" : [
+        {
+          "image-name" : "2-node_3.svg",
+          "name" : "2-node_3",
+          "position" : {
+            "scale" : 1.38,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "name" : "node",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0
+      }
+    },
+    {
+      "blur-material" : 0,
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "image-name" : "1-glow_1.png",
+          "name" : "1-glow_1",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "name" : "glow",
+      "opacity" : 0.4,
+      "shadow" : {
+        "kind" : "none",
+        "opacity" : 0.5
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.15
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
